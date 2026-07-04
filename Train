@@ -1,0 +1,166 @@
+# # Days Since — Intent Classifier Training
+# Run this in Google Colab (free T4 GPU)
+# File → Save a copy in Drive → Runtime → Change runtime type → GPU
+
+# ## 1. Install dependencies
+# !pip install transformers datasets scikit-learn -q
+
+# ## 2. Load dataset
+import json, pathlib
+from datasets import Dataset
+from collections import Counter
+
+DATA_DIR = pathlib.Path("../data")
+
+def load_jsonl(path):
+    return [json.loads(l) for l in path.read_text().splitlines() if l.strip()]
+
+train_raw = load_jsonl(DATA_DIR / "train.jsonl")
+val_raw   = load_jsonl(DATA_DIR / "val.jsonl")
+test_raw  = load_jsonl(DATA_DIR / "test.jsonl")
+
+print(f"Train: {len(train_raw)} | Val: {len(val_raw)} | Test: {len(test_raw)}")
+print("Label distribution:", Counter(ex["intent"] for ex in train_raw))
+
+# ## 3. Label mapping
+LABELS = ["log_entry", "new_activity", "assign_label", "unclear"]
+label2id = {l: i for i, l in enumerate(LABELS)}
+id2label = {i: l for i, l in enumerate(LABELS)}
+
+def to_hf(examples):
+    return Dataset.from_dict({
+        "text":  [ex["text"]             for ex in examples],
+        "label": [label2id[ex["intent"]] for ex in examples],
+    })
+
+train_ds = to_hf(train_raw)
+val_ds   = to_hf(val_raw)
+test_ds  = to_hf(test_raw)
+
+# ## 4. Tokenize
+from transformers import AutoTokenizer
+
+MODEL_NAME = "distilbert-base-uncased"
+tokenizer  = AutoTokenizer.from_pretrained(MODEL_NAME)
+
+def tokenize(batch):
+    return tokenizer(batch["text"], truncation=True, padding="max_length", max_length=64)
+
+train_ds = train_ds.map(tokenize, batched=True)
+val_ds   = val_ds.map(tokenize,   batched=True)
+test_ds  = test_ds.map(tokenize,  batched=True)
+
+train_ds.set_format("torch", columns=["input_ids","attention_mask","label"])
+val_ds.set_format("torch",   columns=["input_ids","attention_mask","label"])
+test_ds.set_format("torch",  columns=["input_ids","attention_mask","label"])
+
+# ## 5. Load model
+from transformers import AutoModelForSequenceClassification
+
+model = AutoModelForSequenceClassification.from_pretrained(
+    MODEL_NAME,
+    num_labels=len(LABELS),
+    id2label=id2label,
+    label2id=label2id
+)
+
+# ## 6. Metrics
+import numpy as np
+from sklearn.metrics import accuracy_score, f1_score, classification_report
+
+def compute_metrics(eval_pred):
+    logits, labels = eval_pred
+    preds = np.argmax(logits, axis=-1)
+    return {
+        "accuracy": accuracy_score(labels, preds),
+        "f1_macro": f1_score(labels, preds, average="macro"),
+    }
+
+# ## 7. Train
+from transformers import TrainingArguments, Trainer
+
+args = TrainingArguments(
+    output_dir             = "../models/intent_classifier",
+    num_train_epochs       = 10,
+    per_device_train_batch_size = 16,
+    per_device_eval_batch_size  = 16,
+    learning_rate          = 2e-5,
+    weight_decay           = 0.01,
+    evaluation_strategy    = "epoch",
+    save_strategy          = "epoch",
+    load_best_model_at_end = True,
+    metric_for_best_model  = "f1_macro",
+    logging_steps          = 5,
+    seed                   = 42,
+)
+
+trainer = Trainer(
+    model           = model,
+    args            = args,
+    train_dataset   = train_ds,
+    eval_dataset    = val_ds,
+    compute_metrics = compute_metrics,
+)
+
+trainer.train()
+
+# ## 8. Evaluate on test set
+from sklearn.metrics import confusion_matrix
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+test_preds = trainer.predict(test_ds)
+pred_ids   = np.argmax(test_preds.predictions, axis=-1)
+true_ids   = test_preds.label_ids
+
+print("\n=== TEST SET RESULTS ===")
+print(classification_report(true_ids, pred_ids, target_names=LABELS))
+
+cm = confusion_matrix(true_ids, pred_ids)
+plt.figure(figsize=(6, 5))
+sns.heatmap(cm, annot=True, fmt="d", xticklabels=LABELS, yticklabels=LABELS, cmap="Blues")
+plt.title("Confusion Matrix — Test Set")
+plt.ylabel("True")
+plt.xlabel("Predicted")
+plt.tight_layout()
+plt.savefig("../confusion_matrix.png", dpi=150)
+plt.show()
+
+# ## 9. Save model
+trainer.save_model("../models/intent_classifier")
+tokenizer.save_pretrained("../models/intent_classifier")
+print("Model saved to ../models/intent_classifier")
+
+# ## 10. Baseline comparison (regex rules)
+import re
+
+def rule_based(text):
+    t = text.lower()
+    log_words   = r'\b(did|played|went|had|finished|practiced|visited|called|cooked|bought|read|watched)\b'
+    new_words   = r'\b(add|track|start tracking|create|new activity|monitor|log|want to track)\b'
+    label_words = r'\b(label|assign|mark|put|group|belongs to|should be|goes under)\b'
+    if re.search(log_words, t) and (re.search(r'\d+ days? (ago|back)', t) or re.search(r'\b(today|yesterday|last week|this morning)\b', t)):
+        return "log_entry"
+    if re.search(new_words, t):
+        return "new_activity"
+    if re.search(label_words, t):
+        return "assign_label"
+    return "unclear"
+
+# Evaluate baseline on test set
+baseline_preds = [rule_based(ex["text"]) for ex in test_raw]
+baseline_true  = [ex["intent"] for ex in test_raw]
+baseline_ids   = [label2id[p] for p in baseline_preds]
+true_ids_list  = [label2id[t] for t in baseline_true]
+
+print("\n=== BASELINE (Rule-based) ===")
+print(classification_report(true_ids_list, baseline_ids, target_names=LABELS))
+
+print("\n=== SUMMARY ===")
+bl_acc = accuracy_score(true_ids_list, baseline_ids)
+bl_f1  = f1_score(true_ids_list, baseline_ids, average="macro")
+ft_acc = accuracy_score(true_ids, pred_ids)
+ft_f1  = f1_score(true_ids, pred_ids, average="macro")
+print(f"Baseline  — Accuracy: {bl_acc:.3f} | F1 Macro: {bl_f1:.3f}")
+print(f"DistilBERT — Accuracy: {ft_acc:.3f} | F1 Macro: {ft_f1:.3f}")
+print(f"Improvement — Accuracy: +{(ft_acc-bl_acc)*100:.1f}pp | F1: +{(ft_f1-bl_f1)*100:.1f}pp")
