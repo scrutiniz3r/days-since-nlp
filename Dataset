@@ -1,0 +1,100 @@
+{"text": "I did football 5 days ago", "intent": "log_entry", "activity": "Football", "days_ago": 5, "is_new": false, "label": null}
+{"text": "Did cricket today", "intent": "log_entry", "activity": "Cricket", "days_ago": 0, "is_new": false, "label": null}
+{"text": "Just finished a bike ride", "intent": "log_entry", "activity": "Bike", "days_ago": 0, "is_new": false, "label": null}
+{"text": "Went to Chennai last week", "intent": "log_entry", "activity": "Chennai", "days_ago": 7, "is_new": false, "label": null}
+{"text": "I exercised yesterday", "intent": "log_entry", "activity": "Exercise", "days_ago": 1, "is_new": false, "label": null}
+{"text": "Called mom 3 days back", "intent": "log_entry", "activity": "Call mom", "days_ago": 3, "is_new": false, "label": null}
+{"text": "Went for a run this morning", "intent": "log_entry", "activity": "Running", "days_ago": 0, "is_new": false, "label": null}
+{"text": "I cooked dinner 2 days ago", "intent": "log_entry", "activity": "Cooking", "days_ago": 2, "is_new": false, "label": null}
+{"text": "Meditated today", "intent": "log_entry", "activity": "Meditation", "days_ago": 0, "is_new": false, "label": null}
+{"text": "Read a book 4 days ago", "intent": "log_entry", "activity": "Reading", "days_ago": 4, "is_new": false, "label": null}
+{"text": "Played tennis yesterday", "intent": "log_entry", "activity": "Tennis", "days_ago": 1, "is_new": false, "label": null}
+{"text": "Had a gym session 6 days ago", "intent": "log_entry", "activity": "Gym", "days_ago": 6, "is_new": false, "label": null}
+{"text": "Visited the dentist a week ago", "intent": "log_entry", "activity": "Dentist", "days_ago": 7, "is_new": false, "label": null}
+{"text": "I went swimming this morning", "intent": "log_entry", "activity": "Swimming", "days_ago": 0, "is_new": false, "label": null}
+{"text": "Cleaned the house 2 days back", "intent": "log_entry", "activity": "Cleaning", "days_ago": 2, "is_new": false, "label": null}
+{"text": "Journaled today", "intent": "log_entry", "activity": "Journaling", "days_ago": 0, "is_new": false, "label": null}
+{"text": "Played chess with a friend 10 days ago", "intent": "log_entry", "activity": "Chess", "days_ago": 10, "is_new": false, "label": null}
+{"text": "Had a haircut yesterday", "intent": "log_entry", "activity": "Haircut", "days_ago": 1, "is_new": false, "label": null}
+{"text": "Watered my plants today", "intent": "log_entry", "activity": "Plants", "days_ago": 0, "is_new": false, "label": null}
+{"text": "Painted for an hour 3 days ago", "intent": "log_entry", "activity": "Painting", "days_ago": 3, "is_new": false, "label": null}
+{"text": "I did yoga 2 days back", "intent": "log_entry", "activity": "Yoga", "days_ago": 2, "is_new": false, "label": null}
+{"text": "Went hiking last Sunday", "intent": "log_entry", "activity": "Hiking", "days_ago": 7, "is_new": false, "label": null}
+{"text": "Did a cold shower this morning", "intent": "log_entry", "activity": "Cold shower", "days_ago": 0, "is_new": false, "label": null}
+{"text": "Spoke to dad 5 days ago", "intent": "log_entry", "activity": "Call dad", "days_ago": 5, "is_new": false, "label": null}
+{"text": "Went to the gym this evening", "intent": "log_entry", "activity": "Gym", "days_ago": 0, "is_new": false, "label": null}
+{"text": "I biked to work today", "intent": "log_entry", "activity": "Bike", "days_ago": 0, "is_new": false, "label": null}
+{"text": "Played basketball 8 days ago", "intent": "log_entry", "activity": "Basketball", "days_ago": 8, "is_new": false, "label": null}
+{"text": "Did push ups this morning", "intent": "log_entry", "activity": "Push ups", "days_ago": 0, "is_new": false, "label": null}
+{"text": "Visited grandma 2 weeks ago", "intent": "log_entry", "activity": "Visit grandma", "days_ago": 14, "is_new": false, "label": null}
+{"text": "Meal prepped on Sunday", "intent": "log_entry", "activity": "Meal prep", "days_ago": 7, "is_new": false, "label": null}
+{"text": "I stretched yesterday evening", "intent": "log_entry", "activity": "Stretching", "days_ago": 1, "is_new": false, "label": null}
+{"text": "Did a 10k run 3 days back", "intent": "log_entry", "activity": "Running", "days_ago": 3, "is_new": false, "label": null}
+{"text": "Guitar practice today", "intent": "log_entry", "activity": "Guitar", "days_ago": 0, "is_new": false, "label": null}
+{"text": "Went to the doctor 4 days ago", "intent": "log_entry", "activity": "Doctor", "days_ago": 4, "is_new": false, "label": null}
+{"text": "Took vitamins this morning", "intent": "log_entry", "activity": "Vitamins", "days_ago": 0, "is_new": false, "label": null}
+{"text": "I watched a movie last night", "intent": "log_entry", "activity": "Movie", "days_ago": 1, "is_new": false, "label": null}
+{"text": "Had a therapy session 5 days ago", "intent": "log_entry", "activity": "Therapy", "days_ago": 5, "is_new": false, "label": null}
+{"text": "Bought groceries yesterday", "intent": "log_entry", "activity": "Groceries", "days_ago": 1, "is_new": false, "label": null}
+{"text": "Finished a 5k this morning", "intent": "log_entry", "activity": "Running", "days_ago": 0, "is_new": false, "label": null}
+{"text": "Did laundry 3 days ago", "intent": "log_entry", "activity": "Laundry", "days_ago": 3, "is_new": false, "label": null}
+{"text": "Start tracking cricket for me", "intent": "new_activity", "activity": "Cricket", "days_ago": null, "is_new": true, "label": null}
+{"text": "Add yoga to my list", "intent": "new_activity", "activity": "Yoga", "days_ago": null, "is_new": true, "label": null}
+{"text": "I want to track my sleep", "intent": "new_activity", "activity": "Sleep", "days_ago": null, "is_new": true, "label": null}
+{"text": "Create a new activity called piano", "intent": "new_activity", "activity": "Piano", "days_ago": null, "is_new": true, "label": null}
+{"text": "Track my water intake from now", "intent": "new_activity", "activity": "Water intake", "days_ago": null, "is_new": true, "label": null}
+{"text": "Add morning walks to the tracker", "intent": "new_activity", "activity": "Morning walk", "days_ago": null, "is_new": true, "label": null}
+{"text": "I want to start tracking journaling", "intent": "new_activity", "activity": "Journaling", "days_ago": null, "is_new": true, "label": null}
+{"text": "Please add stretching", "intent": "new_activity", "activity": "Stretching", "days_ago": null, "is_new": true, "label": null}
+{"text": "New activity: cold showers", "intent": "new_activity", "activity": "Cold shower", "days_ago": null, "is_new": true, "label": null}
+{"text": "Add a tracker for my guitar practice", "intent": "new_activity", "activity": "Guitar", "days_ago": null, "is_new": true, "label": null}
+{"text": "I want to keep track of painting", "intent": "new_activity", "activity": "Painting", "days_ago": null, "is_new": true, "label": null}
+{"text": "Create meditation in the list", "intent": "new_activity", "activity": "Meditation", "days_ago": null, "is_new": true, "label": null}
+{"text": "Add budgeting to my habits", "intent": "new_activity", "activity": "Budgeting", "days_ago": null, "is_new": true, "label": null}
+{"text": "Track my therapy sessions", "intent": "new_activity", "activity": "Therapy", "days_ago": null, "is_new": true, "label": null}
+{"text": "I want to monitor my screen time", "intent": "new_activity", "activity": "Screen time", "days_ago": null, "is_new": true, "label": null}
+{"text": "Add chess to what I track", "intent": "new_activity", "activity": "Chess", "days_ago": null, "is_new": true, "label": null}
+{"text": "Start tracking when I call my sister", "intent": "new_activity", "activity": "Call sister", "days_ago": null, "is_new": true, "label": null}
+{"text": "Add a new habit for reading", "intent": "new_activity", "activity": "Reading", "days_ago": null, "is_new": true, "label": null}
+{"text": "Track my cooking from now on", "intent": "new_activity", "activity": "Cooking", "days_ago": null, "is_new": true, "label": null}
+{"text": "I want to log when I visit Chennai", "intent": "new_activity", "activity": "Chennai", "days_ago": null, "is_new": true, "label": null}
+{"text": "Mark football as a sport", "intent": "assign_label", "activity": "Football", "days_ago": null, "is_new": false, "label": "Sport"}
+{"text": "Put cricket under sport", "intent": "assign_label", "activity": "Cricket", "days_ago": null, "is_new": false, "label": "Sport"}
+{"text": "Chennai should be under travel", "intent": "assign_label", "activity": "Chennai", "days_ago": null, "is_new": false, "label": "Travel"}
+{"text": "Assign fitness label to gym", "intent": "assign_label", "activity": "Gym", "days_ago": null, "is_new": false, "label": "Fitness"}
+{"text": "Make yoga part of health", "intent": "assign_label", "activity": "Yoga", "days_ago": null, "is_new": false, "label": "Health"}
+{"text": "Therapy goes under health", "intent": "assign_label", "activity": "Therapy", "days_ago": null, "is_new": false, "label": "Health"}
+{"text": "Label running as fitness", "intent": "assign_label", "activity": "Running", "days_ago": null, "is_new": false, "label": "Fitness"}
+{"text": "Group painting under hobbies", "intent": "assign_label", "activity": "Painting", "days_ago": null, "is_new": false, "label": "Hobbies"}
+{"text": "Bike should be in fitness", "intent": "assign_label", "activity": "Bike", "days_ago": null, "is_new": false, "label": "Fitness"}
+{"text": "Set meditation label to wellness", "intent": "assign_label", "activity": "Meditation", "days_ago": null, "is_new": false, "label": "Wellness"}
+{"text": "Reading is a hobby", "intent": "assign_label", "activity": "Reading", "days_ago": null, "is_new": false, "label": "Hobbies"}
+{"text": "Add guitar to hobbies", "intent": "assign_label", "activity": "Guitar", "days_ago": null, "is_new": false, "label": "Hobbies"}
+{"text": "Swimming belongs to fitness", "intent": "assign_label", "activity": "Swimming", "days_ago": null, "is_new": false, "label": "Fitness"}
+{"text": "Doctor visits are health related", "intent": "assign_label", "activity": "Doctor", "days_ago": null, "is_new": false, "label": "Health"}
+{"text": "Call mom is family", "intent": "assign_label", "activity": "Call mom", "days_ago": null, "is_new": false, "label": "Family"}
+{"text": "Tennis should be sport", "intent": "assign_label", "activity": "Tennis", "days_ago": null, "is_new": false, "label": "Sport"}
+{"text": "Hiking is outdoor activity", "intent": "assign_label", "activity": "Hiking", "days_ago": null, "is_new": false, "label": "Outdoors"}
+{"text": "Journal is a personal habit", "intent": "assign_label", "activity": "Journaling", "days_ago": null, "is_new": false, "label": "Personal"}
+{"text": "Basketball is a sport obviously", "intent": "assign_label", "activity": "Basketball", "days_ago": null, "is_new": false, "label": "Sport"}
+{"text": "Cooking should go under home", "intent": "assign_label", "activity": "Cooking", "days_ago": null, "is_new": false, "label": "Home"}
+{"text": "hello", "intent": "unclear", "activity": null, "days_ago": null, "is_new": false, "label": null}
+{"text": "what can you do", "intent": "unclear", "activity": null, "days_ago": null, "is_new": false, "label": null}
+{"text": "hmm", "intent": "unclear", "activity": null, "days_ago": null, "is_new": false, "label": null}
+{"text": "nothing", "intent": "unclear", "activity": null, "days_ago": null, "is_new": false, "label": null}
+{"text": "I don't know", "intent": "unclear", "activity": null, "days_ago": null, "is_new": false, "label": null}
+{"text": "maybe later", "intent": "unclear", "activity": null, "days_ago": null, "is_new": false, "label": null}
+{"text": "ok", "intent": "unclear", "activity": null, "days_ago": null, "is_new": false, "label": null}
+{"text": "thanks", "intent": "unclear", "activity": null, "days_ago": null, "is_new": false, "label": null}
+{"text": "what is this app", "intent": "unclear", "activity": null, "days_ago": null, "is_new": false, "label": null}
+{"text": "can you help me", "intent": "unclear", "activity": null, "days_ago": null, "is_new": false, "label": null}
+{"text": "show me my stats", "intent": "unclear", "activity": null, "days_ago": null, "is_new": false, "label": null}
+{"text": "delete everything", "intent": "unclear", "activity": null, "days_ago": null, "is_new": false, "label": null}
+{"text": "I think I maybe did something last week possibly", "intent": "unclear", "activity": null, "days_ago": null, "is_new": false, "label": null}
+{"text": "random words going here now", "intent": "unclear", "activity": null, "days_ago": null, "is_new": false, "label": null}
+{"text": "test test test", "intent": "unclear", "activity": null, "days_ago": null, "is_new": false, "label": null}
+{"text": "I did football yesterday and also cricket", "intent": "unclear", "activity": null, "days_ago": null, "is_new": false, "label": null}
+{"text": "exercise", "intent": "unclear", "activity": null, "days_ago": null, "is_new": false, "label": null}
+{"text": "12345", "intent": "unclear", "activity": null, "days_ago": null, "is_new": false, "label": null}
+{"text": "I went somewhere recently", "intent": "unclear", "activity": null, "days_ago": null, "is_new": false, "label": null}
+{"text": "did something 3 days ago", "intent": "unclear", "activity": null, "days_ago": null, "is_new": false, "label": null}
