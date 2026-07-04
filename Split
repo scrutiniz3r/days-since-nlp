@@ -1,0 +1,36 @@
+"""
+Split dataset.jsonl into train / val / test sets.
+Stratified by intent so all classes appear in each split.
+"""
+import json, random, pathlib
+from collections import defaultdict
+
+random.seed(42)
+DATA_DIR = pathlib.Path(__file__).parent.parent / "data"
+
+examples = [json.loads(l) for l in (DATA_DIR / "dataset.jsonl").read_text().splitlines() if l.strip()]
+
+by_intent = defaultdict(list)
+for ex in examples:
+    by_intent[ex["intent"]].append(ex)
+
+train, val, test = [], [], []
+for intent, items in by_intent.items():
+    random.shuffle(items)
+    n = len(items)
+    n_test = max(1, int(n * 0.15))
+    n_val  = max(1, int(n * 0.15))
+    test  += items[:n_test]
+    val   += items[n_test:n_test + n_val]
+    train += items[n_test + n_val:]
+
+def write(path, data):
+    with open(path, "w") as f:
+        for ex in data:
+            f.write(json.dumps(ex) + "\n")
+    print(f"  {path.name}: {len(data)} examples")
+
+print("Split complete:")
+write(DATA_DIR / "train.jsonl", train)
+write(DATA_DIR / "val.jsonl",   val)
+write(DATA_DIR / "test.jsonl",  test)
