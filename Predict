@@ -1,0 +1,44 @@
+"""
+Full prediction pipeline:
+  1. Load fine-tuned intent classifier
+  2. Extract entities with rule-based extractor
+  3. Return structured JSON
+"""
+from transformers import pipeline
+from extract_entities import extract
+
+LABELS = ["log_entry", "new_activity", "assign_label", "unclear"]
+
+class DaysSinceNLP:
+    def __init__(self, model_path: str = "../models/intent_classifier"):
+        self.classifier = pipeline(
+            "text-classification",
+            model=model_path,
+            tokenizer=model_path
+        )
+
+    def predict(self, text: str) -> dict:
+        result = self.classifier(text)[0]
+        intent = result["label"]
+        confidence = round(result["score"], 4)
+        entities = extract(text)
+        return {
+            "intent": intent,
+            "activity": entities["activity"],
+            "days_ago": entities["days_ago"],
+            "is_new": intent == "new_activity",
+            "label": None,
+            "confidence": confidence,
+            "raw": text
+        }
+
+if __name__ == "__main__":
+    print("Entity extraction smoke test:")
+    samples = [
+        "I did football 5 days ago",
+        "Add yoga to my list",
+        "Put cricket under sport",
+        "hello there",
+    ]
+    for s in samples:
+        print(f"  {s!r} → {extract(s)}")
