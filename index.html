@@ -1,0 +1,2157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Days Since</title>
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#FBF7F0" id="themeColorMeta"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-title" content="Days Since"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- Firebase (compat build — simplest for a single-file app, no bundler needed) -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script>
+// ── FIREBASE CONFIG ──
+// Get this from: Firebase Console → Project Settings → General → Your apps → Web app → SDK setup and config
+const firebaseConfig = {
+  apiKey: "PASTE_YOUR_API_KEY",
+  authDomain: "PASTE_YOUR_PROJECT.firebaseapp.com",
+  projectId: "PASTE_YOUR_PROJECT_ID",
+  storageBucket: "PASTE_YOUR_PROJECT.appspot.com",
+  messagingSenderId: "PASTE_YOUR_SENDER_ID",
+  appId: "PASTE_YOUR_APP_ID"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const dbFs = firebase.firestore();
+// Enable offline persistence — app works offline and syncs when back online
+dbFs.enablePersistence({synchronizeTabs:true}).catch(err=>console.log('Persistence not enabled:',err.code));
+</script>
+<script>
+(function(){
+  const t=localStorage.getItem('dsc_theme');
+  const dark=t?t==='dark':window.matchMedia('(prefers-color-scheme:dark)').matches;
+  document.documentElement.setAttribute('data-theme',dark?'dark':'light');
+  document.addEventListener('DOMContentLoaded',function(){
+    const meta=document.getElementById('themeColorMeta');
+    if(meta) meta.setAttribute('content',dark?'#141210':'#FBF7F0');
+  });
+})();
+</script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#FBF7F0;
+  --surface:#FFFFFF;
+  --surface2:#F5EFE6;
+  --border:#EDE5D8;
+  --border2:#F3ECE2;
+  --tp:#2C2016;
+  --ts:#7A6A56;
+  --th:#B8A898;
+  --rose:#C8584A;
+  --rose-bg:#FAEAE8;
+  --amber:#C4783A;
+  --amber-bg:#FBF0E4;
+  --sage:#5A8A56;
+  --sage-bg:#EBF4EA;
+  --r:16px;--pill:100px;
+  --serif:'Fraunces',Georgia,serif;
+  --sans:'Inter',system-ui,sans-serif;
+  --ease:cubic-bezier(.25,.46,.45,.94);
+  --shadow:0 2px 12px rgba(44,32,22,.07);
+  --shadow-lg:0 8px 32px rgba(44,32,22,.12);
+}
+
+[data-theme="dark"]{
+  --bg:#141210;
+  --surface:#1F1C18;
+  --surface2:#2A2620;
+  --border:#3A342C;
+  --border2:#302A22;
+  --tp:#F0EAE0;
+  --ts:#A09080;
+  --th:#706050;
+  --rose:#F08878;
+  --rose-bg:#3A1810;
+  --amber:#F0A840;
+  --amber-bg:#382210;
+  --sage:#88C878;
+  --sage-bg:#182818;
+  --shadow:0 2px 12px rgba(0,0,0,.4);
+  --shadow-lg:0 8px 32px rgba(0,0,0,.6);
+}
+body{font-family:var(--sans);background:var(--bg);color:var(--tp);min-height:100vh;-webkit-font-smoothing:antialiased}
+.screen{display:none;min-height:100vh;background:var(--bg)}
+.screen.active{display:flex;flex-direction:column}
+
+/* ─── SETUP SCREEN ─── */
+.setup-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:2rem;background:var(--bg)}
+.setup-card{width:100%;max-width:400px;background:var(--surface);border-radius:24px;padding:2rem;box-shadow:var(--shadow-lg)}
+.setup-logo{font-family:var(--serif);font-size:28px;font-weight:300;color:var(--tp);margin-bottom:.25rem}
+.setup-logo em{font-style:italic;color:var(--amber)}
+.setup-sub{font-size:14px;color:var(--ts);line-height:1.6;margin-bottom:1.25rem}
+.welcome-msg{font-size:14px;color:var(--ts);line-height:1.7;margin-bottom:1.1rem;font-family:var(--serif)}
+.welcome-msg em{font-style:italic;color:var(--amber)}
+.welcome-punch{color:var(--tp);font-style:italic}
+.welcome-msg:last-of-type{margin-bottom:1.75rem}
+.setup-tabs{display:flex;gap:0;margin-bottom:1rem;background:var(--surface2);border-radius:12px;padding:4px}
+.setup-tab{flex:1;padding:9px;font-size:13px;font-weight:500;background:transparent;color:var(--ts);border:none;border-radius:9px;cursor:pointer;font-family:var(--sans);transition:all .15s}
+.setup-tab.on{background:var(--surface);color:var(--tp);font-weight:600;box-shadow:0 1px 4px rgba(44,32,22,.1)}
+.setup-hint{font-size:12px;color:var(--ts);background:var(--amber-bg);border-radius:10px;padding:10px 12px;margin-bottom:1.25rem;line-height:1.5}
+.google-btn{width:100%;padding:12px;font-size:14px;font-weight:600;background:var(--surface);color:var(--tp);border:1.5px solid var(--border);border-radius:14px;cursor:pointer;font-family:var(--sans);display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:1rem}
+.google-btn:hover{border-color:var(--ts);transform:translateY(-1px);box-shadow:var(--shadow)}
+.google-btn:active{transform:scale(.98)}
+.auth-divider{display:flex;align-items:center;gap:10px;margin:1rem 0;font-size:12px;color:var(--th)}
+.auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.auth-mode-switch{font-size:13px;color:var(--ts);text-align:center;margin-top:14px}
+.auth-mode-switch a{color:var(--amber);font-weight:600;cursor:pointer;text-decoration:none}
+.auth-forgot{font-size:12px;color:var(--ts);text-align:right;display:block;margin:-6px 0 1rem;cursor:pointer;text-decoration:none}
+.auth-forgot:hover{color:var(--amber)}
+.field{margin-bottom:1.1rem}
+.field label{display:block;font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--th);margin-bottom:6px}
+.field input{width:100%;padding:11px 14px;font-size:14px;border:1.5px solid var(--border);border-radius:12px;background:var(--bg);color:var(--tp);outline:none;font-family:var(--sans);transition:border-color .15s}
+.field input:focus{border-color:var(--amber)}
+.field small{display:block;font-size:12px;color:var(--th);margin-top:5px;line-height:1.6}
+.field small code{background:var(--surface2);padding:1px 5px;border-radius:4px;font-size:11px}
+.setup-pin-row{display:flex;gap:8px;margin-bottom:1.1rem;align-items:center}
+.setup-pin-row label{font-size:13px;color:var(--ts);flex:1}
+.toggle{position:relative;width:44px;height:24px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:var(--border);border-radius:var(--pill);cursor:pointer;transition:background .2s;border:1.5px solid var(--border2)}
+.toggle-slider:before{content:'';position:absolute;width:18px;height:18px;left:2px;top:2px;background:#fff;border-radius:50%;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.toggle input:checked+.toggle-slider{background:var(--amber);border-color:var(--amber)}
+.toggle input:checked+.toggle-slider:before{transform:translateX(20px)}
+[data-theme="dark"] .toggle-slider{background:var(--surface2);border-color:var(--border)}
+.pin-fields{display:none;gap:8px;margin-bottom:1.1rem}
+.pin-fields.show{display:flex}
+.pin-fields input{flex:1;padding:11px 14px;font-size:14px;border:1.5px solid var(--border);border-radius:12px;background:var(--bg);color:var(--tp);outline:none;font-family:var(--sans);transition:border-color .15s}
+.pin-fields input:focus{border-color:var(--amber)}
+.err{font-size:13px;color:var(--rose);min-height:18px;margin-bottom:8px}
+.btn-cta{width:100%;padding:14px;font-size:15px;font-weight:600;background:var(--tp);color:var(--bg);border:none;border-radius:14px;cursor:pointer;font-family:var(--sans)}
+.btn-cta:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(44,32,22,.2)}
+.btn-cta:active{transform:scale(.98)}
+.setup-foot{font-size:13px;color:var(--ts);margin-top:16px;text-align:center}
+.setup-foot a{color:var(--amber);cursor:pointer;font-weight:500;text-decoration:none}
+.setup-foot a:hover{text-decoration:underline}
+
+/* ─── PIN SCREEN ─── */
+.pin-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:2rem;background:var(--bg)}
+.pin-card{width:100%;max-width:320px;text-align:center}
+.pin-greeting{font-family:var(--serif);font-size:28px;font-weight:300;line-height:1.3;margin-bottom:.5rem;color:var(--tp)}
+.pin-greeting em{font-style:italic;color:var(--amber)}
+.pin-hint{font-size:14px;color:var(--ts);margin-bottom:2rem}
+.pin-dots{display:flex;gap:12px;justify-content:center;margin-bottom:2rem}
+.pin-dot{width:13px;height:13px;border-radius:50%;border:2px solid var(--border);background:transparent;transition:all .2s var(--ease)}
+.pin-dot.filled{background:var(--amber);border-color:var(--amber);transform:scale(1.1)}
+.pin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1rem}
+.pin-key{padding:18px;font-size:18px;font-weight:500;border:1.5px solid var(--border);border-radius:14px;background:var(--surface);color:var(--tp);cursor:pointer;user-select:none;font-family:var(--sans);box-shadow:var(--shadow)}
+.pin-key:hover{background:var(--surface2);border-color:var(--amber);transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+.pin-key:active{transform:scale(.95);box-shadow:none}
+.pin-key:hover{background:var(--surface2);border-color:var(--amber)}
+.pin-key:active{transform:scale(.95)}
+.pin-err{font-size:13px;color:var(--rose);min-height:18px;margin-top:2px}
+.pin-link{font-size:13px;color:var(--ts);cursor:pointer;text-decoration:underline;text-underline-offset:3px;margin-top:12px;display:inline-block}
+.pin-foot{font-size:13px;color:var(--ts);margin-top:16px}
+.pin-foot a{color:var(--amber);cursor:pointer;font-weight:500;text-decoration:none}
+
+/* ─── GREETING SCREEN ─── */
+#greetScreen{background:var(--bg)}
+.greet-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:2rem;flex-direction:column;gap:2rem}
+.greet-bubble{background:var(--surface);border-radius:24px;padding:2.5rem 2rem;max-width:440px;width:100%;box-shadow:var(--shadow-lg);text-align:left}
+.greet-emoji{display:none}
+.greet-text{font-family:var(--serif);font-size:24px;font-weight:300;line-height:1.4;color:var(--tp);margin-bottom:1.25rem}
+.greet-text em{font-style:italic;color:var(--amber)}
+.greet-sub{font-size:14px;color:var(--ts);line-height:1.75;font-style:italic;border-left:3px solid var(--amber);padding-left:1rem}
+.greet-continue{padding:13px 32px;font-size:15px;font-weight:600;background:var(--tp);color:var(--bg);border:none;border-radius:var(--pill);cursor:pointer;font-family:var(--sans)}
+.greet-continue:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(44,32,22,.2)}
+.greet-continue:active{transform:scale(.96)}
+
+/* ─── TOPBAR ─── */
+.topbar{display:flex;align-items:center;gap:8px;padding:.75rem 1.25rem;background:var(--surface);border-bottom:1px solid var(--border2);position:sticky;top:0;z-index:10}
+.topbar-title{font-family:var(--serif);font-size:30px;font-weight:300;flex:1;color:var(--tp);line-height:1}
+.topbar-title em{font-style:italic;color:var(--amber)}
+.tb-btn{height:38px;border-radius:var(--pill);border:1.5px solid var(--border);background:transparent;color:var(--ts);cursor:pointer;transition:all .15s;font-family:var(--sans);font-size:18px;font-weight:500;display:flex;align-items:center;gap:5px;padding:0 14px;white-space:nowrap}
+.setting-row .tb-btn{height:30px;font-size:12px;padding:0 12px;gap:4px}
+.tb-btn:hover{border-color:var(--amber);color:var(--amber);transform:translateY(-1px);box-shadow:var(--shadow)}
+.tb-btn:active{transform:scale(.95)}
+
+/* ── GLOBAL BUTTON LIFT ── */
+button{transition:transform .15s,box-shadow .15s,opacity .15s,background .15s,color .15s,border-color .15s}
+.btn-lift:hover,.btn-lift:focus-visible{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+.btn-lift:active{transform:scale(.95);box-shadow:none}
+
+/* ─── MAIN ─── */
+.main{flex:1;max-width:860px;margin:0 auto;width:100%;padding:1rem 1.25rem 6rem;background:var(--bg)}
+
+.notif-strip{display:flex;align-items:center;gap:10px;background:var(--amber-bg);color:var(--amber);border-radius:14px;padding:11px 14px;font-size:13px;margin-bottom:1.25rem;cursor:pointer;border:1.5px solid #EDCFA8}
+.notif-strip:hover{opacity:.85}
+.notif-strip.off{display:none}
+
+/* ── FAB ── */
+.fab{position:fixed;bottom:1.75rem;right:1.75rem;width:68px;height:68px;border-radius:50%;background:var(--tp);color:var(--bg);border:none;font-size:36px;font-weight:300;cursor:pointer;box-shadow:0 6px 24px rgba(44,32,22,.3);display:flex;align-items:center;justify-content:center;z-index:20;line-height:1}
+.fab:hover{transform:translateY(-3px);box-shadow:0 10px 32px rgba(44,32,22,.4)}
+.fab:active{transform:scale(.93)}
+.fab-mic{bottom:1.75rem;right:7rem;background:var(--amber);font-size:26px}
+.fab-mic.listening{background:var(--rose);animation:micPulse 1s ease-in-out infinite}
+@keyframes micPulse{0%,100%{box-shadow:0 6px 24px rgba(44,32,22,.3)}50%{box-shadow:0 6px 32px rgba(200,88,74,.6)}}
+
+/* ── VOICE MODAL ── */
+.voice-overlay{display:none;position:fixed;inset:0;background:rgba(44,32,22,.5);z-index:70;align-items:center;justify-content:center;padding:1.5rem;backdrop-filter:blur(4px)}
+.voice-overlay.on{display:flex}
+.voice-modal{background:var(--surface);border-radius:24px;padding:2rem;width:100%;max-width:380px;box-shadow:var(--shadow-lg);text-align:center}
+.voice-title{font-family:var(--serif);font-size:22px;font-weight:300;color:var(--tp);margin-bottom:.5rem}
+.voice-title em{font-style:italic;color:var(--amber)}
+.voice-status{font-size:13px;color:var(--ts);margin-bottom:1.5rem;min-height:20px}
+.voice-transcript{font-size:16px;color:var(--tp);font-style:italic;min-height:28px;margin-bottom:1rem;padding:0 .5rem;line-height:1.5}
+.voice-result{font-size:13px;color:var(--ts);margin-bottom:1.5rem;min-height:18px;padding:8px 12px;background:var(--surface2);border-radius:10px;display:none}
+.voice-result.show{display:block}
+.voice-mic-btn{width:72px;height:72px;border-radius:50%;background:var(--amber);color:#fff;border:none;font-size:30px;cursor:pointer;margin:0 auto 1.25rem;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(196,120,58,.35)}
+.voice-mic-btn.listening{background:var(--rose);animation:micPulse 1s ease-in-out infinite}
+.voice-actions{display:flex;gap:8px;justify-content:center;width:100%}
+.voice-text-row{display:flex;gap:8px;margin-bottom:1.25rem;width:100%}
+.voice-text-input{flex:1;padding:10px 14px;font-size:14px;border:1.5px solid var(--border);border-radius:12px;background:var(--bg);color:var(--tp);outline:none;font-family:var(--sans);transition:border-color .15s}
+.voice-text-input:focus{border-color:var(--amber)}
+.voice-text-input::placeholder{color:var(--th);font-size:12px}
+.voice-text-btn{padding:10px 16px;font-size:16px;font-weight:600;background:var(--amber);color:#fff;border:none;border-radius:12px;cursor:pointer}
+.voice-confirm{padding:12px 24px;font-size:14px;font-weight:600;background:var(--tp);color:var(--bg);border:none;border-radius:12px;cursor:pointer;display:none;flex:1;font-family:var(--sans)}
+.voice-confirm.show{display:block}.voice-confirm:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(44,32,22,.2)}.voice-confirm:active{transform:scale(.97)}.voice-cancel{padding:12px 16px;font-size:14px;font-weight:500;background:transparent;color:var(--ts);border:1.5px solid var(--border);border-radius:12px;cursor:pointer;font-family:var(--sans)}.voice-cancel:hover{border-color:var(--ts);color:var(--tp)}
+
+/* ── ADD MODAL ── */
+.add-overlay{display:none;position:fixed;inset:0;background:rgba(44,32,22,.4);z-index:70;align-items:center;justify-content:center;padding:1.5rem;backdrop-filter:blur(3px)}
+.add-overlay.on{display:flex}
+.add-modal{background:var(--surface);border-radius:24px;padding:1.5rem;width:100%;max-width:400px;box-shadow:var(--shadow-lg)}
+.add-modal-title{font-family:var(--serif);font-size:22px;font-weight:300;margin-bottom:1.1rem;color:var(--tp)}
+.add-modal-title em{font-style:italic;color:var(--amber)}
+.add-modal-input{width:100%;padding:12px 14px;font-size:15px;border:1.5px solid var(--border);border-radius:14px;background:var(--bg);color:var(--tp);outline:none;font-family:var(--sans);margin-bottom:1rem;transition:border-color .15s}
+.add-modal-input:focus{border-color:var(--amber)}
+.add-modal-input::placeholder{color:var(--th)}
+.add-modal-label-row{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:1.25rem;min-height:32px}
+.add-lbl-chip{padding:5px 12px;font-size:12px;font-weight:500;border:1.5px solid var(--border);border-radius:var(--pill);background:var(--surface);color:var(--ts);cursor:pointer;transition:all .15s;white-space:nowrap}
+.add-lbl-chip.picked{background:#2C2016 !important;color:#FBF7F0 !important;border-color:#2C2016 !important;font-weight:600}
+[data-theme="dark"] .add-lbl-chip.picked{background:#F0EAE0 !important;color:#141210 !important;border-color:#F0EAE0 !important}
+.add-modal-actions{display:flex;gap:8px;justify-content:flex-end}
+.add-modal-cancel{padding:10px 16px;font-size:14px;font-weight:500;border:1.5px solid var(--border);border-radius:12px;background:transparent;color:var(--ts);cursor:pointer;font-family:var(--sans)}
+.add-modal-cancel:hover{border-color:var(--ts);color:var(--tp);transform:translateY(-1px);box-shadow:var(--shadow)}
+.add-modal-cancel:active{transform:scale(.96)}
+.add-modal-submit{padding:10px 20px;font-size:14px;font-weight:600;background:var(--tp);color:var(--bg);border:none;border-radius:12px;cursor:pointer;font-family:var(--sans)}
+.add-modal-submit:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(44,32,22,.2)}
+.add-modal-submit:active{transform:scale(.96)}
+
+/* FILTER CHIPS */
+.chips{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:1rem}
+.chip{padding:5px 12px;font-size:12px;font-weight:500;border:1.5px solid var(--border);border-radius:var(--pill);background:var(--surface);color:var(--ts);cursor:pointer;transition:all .15s;white-space:nowrap}
+.chip:hover{border-color:var(--amber);color:var(--amber)}
+.chip.on{background:var(--tp);color:var(--bg);border-color:var(--tp);transform:scale(1.03);font-weight:600;box-shadow:0 0 10px 2px rgba(44,32,22,.15)}
+[data-theme="dark"] .chip.on{box-shadow:0 0 10px 2px rgba(240,234,224,.12)}
+.chip.mgmt{color:var(--th);border-style:dashed;background:transparent}
+.chip.mgmt:hover{color:var(--ts)}
+
+/* ── TILE GRID ── */
+.items{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px}
+
+.tile{background:var(--surface);border-radius:16px;box-shadow:var(--shadow);border:1.5px solid transparent;padding:1rem 1rem .85rem;cursor:pointer;user-select:none;transition:border-color .2s,box-shadow .2s,transform .15s;display:flex;flex-direction:column;gap:4px;min-height:110px;position:relative;overflow:hidden}
+.tile:hover{box-shadow:var(--shadow-lg);border-color:var(--border);transform:translateY(-1px)}
+.tile:active{transform:scale(.97)}
+.tile.milestone{border-color:var(--sage)}
+.tile.reminder-hit{animation:reminderGlow 2.2s ease-in-out infinite}
+@keyframes reminderGlow{
+  0%,100%{box-shadow:var(--shadow),0 0 0 0 rgba(196,120,58,0)}
+  50%{box-shadow:var(--shadow),0 0 18px 4px rgba(196,120,58,.45)}
+}
+
+.tile-stripe{position:absolute;top:0;left:0;right:0;height:3px;border-radius:16px 16px 0 0}
+.tile-count{font-family:var(--serif);font-size:38px;font-weight:600;line-height:1;margin-top:4px}
+.tile-unit{font-size:11px;color:var(--th);font-weight:400;letter-spacing:.03em;margin-top:1px}
+.tile-name{font-size:24px;font-weight:500;font-family:var(--serif);font-style:italic;color:var(--amber);margin-top:auto;padding-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
+.tile-meta{font-size:10px;color:var(--th);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile-ms{position:absolute;top:10px;right:10px;font-size:14px}
+.tile-pin{position:absolute;top:10px;left:10px;font-size:12px;opacity:.85}
+
+/* ── TILE CONTEXT MENU ── */
+.ctx-overlay{display:none;position:fixed;inset:0;z-index:65;pointer-events:none}
+.ctx-overlay.on{display:block;pointer-events:auto}
+.ctx-menu{position:fixed;background:var(--surface);border-radius:16px;box-shadow:0 8px 40px rgba(44,32,22,.25),0 2px 8px rgba(44,32,22,.1);border:1px solid var(--border);min-width:200px;overflow:hidden;animation:ctxPop .18s var(--ease) both}
+@keyframes ctxPop{from{opacity:0;transform:scale(.88)}to{opacity:1;transform:scale(1)}}
+.ctx-title{font-family:var(--serif);font-size:15px;font-style:italic;color:var(--amber);padding:12px 16px 8px;border-bottom:1px solid var(--border2);font-weight:600}
+.ctx-item{width:100%;padding:12px 16px;font-size:14px;font-weight:500;background:transparent;color:var(--tp);border:none;border-bottom:1px solid var(--border2);cursor:pointer;text-align:left;font-family:var(--sans);display:flex;align-items:center;gap:10px}
+.ctx-item:last-child{border-bottom:none}
+.ctx-item:hover{background:var(--surface2)}
+.ctx-item:active{background:var(--border)}
+.ctx-item.ctx-danger{color:var(--rose)}
+.ctx-item.ctx-danger:hover{background:var(--rose-bg)}
+.ctx-backdrop{position:fixed;inset:0;z-index:-1}
+
+/* ── BOTTOM SHEET ── */
+.sheet-overlay{display:none;position:fixed;inset:0;background:rgba(44,32,22,.4);z-index:60;backdrop-filter:blur(2px)}
+.sheet-overlay.on{display:flex;align-items:center;justify-content:center;padding:1rem}
+.sheet{background:var(--surface);border-radius:24px;padding:1.25rem 1.25rem 1.5rem;width:100%;max-width:480px;box-shadow:var(--shadow-lg);max-height:90vh;overflow-y:auto}
+.sheet-handle{width:36px;height:4px;background:var(--border);border-radius:var(--pill);margin:0 auto 1.25rem}
+.sheet-head{display:flex;align-items:flex-start;gap:10px;margin-bottom:1.25rem}
+.sheet-count{font-family:var(--serif);font-size:52px;font-weight:600;line-height:1}
+.sheet-info{flex:1;padding-top:6px}
+.sheet-name{font-size:20px;font-weight:600;color:var(--tp);line-height:1.2}
+.sheet-sub{font-size:13px;color:var(--ts);margin-top:4px;line-height:1.5}
+.sheet-lbl{display:inline-block;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:3px 10px;border-radius:var(--pill);margin-top:6px}
+.sheet-close{width:32px;height:32px;border-radius:50%;border:none;background:var(--surface2);color:var(--ts);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sheet-ms{display:flex;align-items:center;gap:8px;background:var(--sage-bg);color:var(--sage);border-radius:10px;padding:8px 12px;font-size:13px;font-weight:500;margin-bottom:1rem}
+.sheet-sec{margin-bottom:1.1rem}
+.sheet-lbl-sm{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--th);margin-bottom:.55rem}
+
+/* notes */
+.sheet-notes{width:100%;padding:8px 12px;font-size:13px;border:1.5px solid var(--border);border-radius:12px;background:var(--bg);color:var(--tp);outline:none;font-family:var(--sans);line-height:1.5;resize:none;transition:border-color .2s;display:block;overflow:hidden;min-height:34px}
+.sheet-notes:focus{border-color:var(--amber)}
+.sheet-notes::placeholder{color:var(--th);font-size:13px;line-height:1.4}
+.entry-row{display:flex;gap:7px}
+.date-in{flex:1;padding:9px 12px;font-size:13px;border:1.5px solid var(--border);border-radius:12px;background:var(--bg);color:var(--tp);outline:none;font-family:var(--sans);transition:border-color .15s}
+.date-in:focus{border-color:var(--amber)}
+.btn-add{padding:9px 14px;font-size:13px;font-weight:600;background:var(--amber);color:#fff;border:none;border-radius:12px;cursor:pointer;white-space:nowrap}
+.btn-add.faded{background:var(--surface2);color:var(--th);cursor:default;box-shadow:none}
+.btn-add.faded:hover{transform:none;box-shadow:none}
+.btn-add:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(196,120,58,.35)}
+.btn-add:active{transform:scale(.96)}
+
+/* history */
+.hist-list{display:flex;flex-direction:column;gap:2px;max-height:160px;overflow-y:auto}
+.hist-row{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:10px;transition:background .1s}
+.hist-row:hover{background:var(--surface2)}
+.hist-date{flex:1;font-size:13px;color:var(--ts)}
+.hist-tag{font-size:10px;font-weight:600;padding:2px 8px;border-radius:var(--pill);background:var(--sage-bg);color:var(--sage)}
+.hist-x{width:26px;height:26px;border-radius:8px;border:none;background:transparent;color:var(--th);cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center;transition:all .1s;flex-shrink:0;line-height:1}
+.hist-x:hover{background:var(--rose-bg);color:var(--rose)}
+.hist-empty{font-size:13px;color:var(--th);padding:6px 10px}
+
+/* sheet actions */
+.sheet-actions{display:flex;gap:8px;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border2)}
+.btn-today{flex:1;padding:10px 18px;font-size:13px;font-weight:600;background:var(--sage-bg);color:var(--sage);border:none;border-radius:12px;cursor:pointer;text-align:center}
+.btn-today:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(90,138,86,.25)}
+.btn-today:active{transform:scale(.96)}
+.btn-del{padding:10px 16px;font-size:13px;font-weight:600;border:1.5px solid var(--border);border-radius:12px;background:transparent;color:var(--ts);cursor:pointer}
+.btn-del:hover{border-color:var(--rose);color:var(--rose);background:var(--rose-bg);transform:translateY(-1px);box-shadow:0 4px 12px rgba(200,88,74,.2)}
+.btn-del:active{transform:scale(.96)}
+
+/* empty */
+.empty-state{grid-column:1/-1;text-align:center;padding:3rem 1rem}
+.empty-state .big{font-family:var(--serif);font-size:24px;font-weight:300;color:var(--ts);margin-bottom:.5rem}
+.empty-state .big em{font-style:italic;color:var(--amber)}
+.empty-state small{font-size:13px;color:var(--th)}
+
+/* SETTINGS PANEL */
+.settings-overlay{display:none;position:fixed;inset:0;background:rgba(44,32,22,.35);z-index:40;backdrop-filter:blur(3px)}
+.settings-overlay.on{display:flex;align-items:flex-end;justify-content:center}
+@media(min-width:540px){.settings-overlay.on{align-items:center}}
+.settings-panel{background:var(--surface);border-radius:24px 24px 0 0;padding:1.5rem;width:100%;max-width:440px;box-shadow:var(--shadow-lg)}
+@media(min-width:540px){.settings-panel{border-radius:24px}}
+.settings-head{display:flex;align-items:center;margin-bottom:1.5rem}
+.settings-head h2{font-family:var(--serif);font-size:22px;font-weight:300;flex:1}
+.settings-head h2 em{font-style:italic;color:var(--amber)}
+.settings-close{width:32px;height:32px;border-radius:50%;border:none;background:var(--surface2);color:var(--ts);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center}
+.setting-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border2)}
+.setting-row:last-child{border-bottom:none}
+.setting-info{flex:1}
+.setting-info strong{display:block;font-size:14px;font-weight:500;color:var(--tp)}
+.setting-info small{font-size:12px;color:var(--th);line-height:1.5}
+.pin-change-row{display:none;flex-direction:column;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border2)}
+.pin-change-row.show{display:flex}
+.pin-change-row input{padding:9px 12px;font-size:14px;border:1.5px solid var(--border);border-radius:12px;background:var(--bg);color:var(--tp);outline:none;font-family:var(--sans)}
+.pin-change-row input:focus{border-color:var(--amber)}
+.pin-save-btn{padding:9px 16px;font-size:13px;font-weight:600;background:var(--amber);color:#fff;border:none;border-radius:12px;cursor:pointer;align-self:flex-start}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(44,32,22,.4);z-index:50;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(3px)}
+.modal-overlay.on{display:flex}
+.modal{background:var(--surface);border-radius:24px;padding:1.5rem;width:100%;max-width:360px;box-shadow:var(--shadow-lg)}
+.modal h2{font-family:var(--serif);font-size:20px;font-weight:300;margin-bottom:1rem}
+.modal h2 em{font-style:italic;color:var(--amber)}
+.lbl-list{display:flex;flex-direction:column;gap:12px;max-height:260px;overflow-y:auto;margin-bottom:1rem}
+.lbl-item{display:flex;flex-direction:column;gap:6px}
+.lbl-item-top{display:flex;align-items:center;gap:8px}
+.lbl-swatch{width:14px;height:14px;border-radius:50%;flex-shrink:0}
+.lbl-item input{flex:1;padding:8px 12px;font-size:14px;border:1.5px solid var(--border);border-radius:10px;background:var(--bg);color:var(--tp);font-family:var(--sans);outline:none}
+.lbl-item input:focus{border-color:var(--amber)}
+.lbl-item button{padding:7px 9px;border:1.5px solid var(--border);border-radius:10px;background:transparent;color:var(--th);cursor:pointer;font-size:13px}
+.lbl-item button:hover{color:var(--rose);border-color:var(--rose)}
+.swatches{display:flex;gap:5px;flex-wrap:wrap;padding-left:22px}
+.sw{width:20px;height:20px;border-radius:50%;cursor:pointer;border:2.5px solid transparent;transition:transform .1s,border-color .1s}
+.sw:hover{transform:scale(1.2)}
+.sw.picked{border-color:var(--tp)}
+.new-lbl{display:flex;gap:7px;margin-bottom:1rem}
+.new-lbl input{flex:1;padding:9px 12px;font-size:14px;border:1.5px solid var(--border);border-radius:12px;background:var(--bg);color:var(--tp);font-family:var(--sans);outline:none}
+.new-lbl input:focus{border-color:var(--amber)}
+.new-lbl button{padding:9px 14px;font-size:13px;font-weight:600;background:var(--amber);color:#fff;border:none;border-radius:12px;cursor:pointer}
+.modal-foot{display:flex;justify-content:flex-end}
+.modal-foot button{padding:9px 20px;font-size:13px;font-weight:600;background:var(--tp);color:var(--bg);border:none;border-radius:12px;cursor:pointer}
+
+/* SYNC BAR */
+.syncbar{display:flex;align-items:center;gap:8px;padding:.6rem 1.25rem;font-size:12px;color:var(--th);border-top:1px solid var(--border2);background:var(--surface)}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--th);flex-shrink:0}
+.dot.ok{background:var(--sage)}
+.dot.err{background:var(--rose)}
+.dot.busy{background:var(--amber);animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+
+@media(max-width:400px){
+  .items{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
+  .tile-count{font-size:32px}
+  .main{padding:.75rem}
+}
+@media(prefers-reduced-motion:reduce){
+  *{transition:none!important;animation:none!important}
+}
+</style>
+</head>
+<body>
+
+<!-- ── AUTH (Firebase Sign In / Sign Up) ── -->
+<div id="setupScreen" class="screen">
+  <div class="setup-wrap">
+    <div class="setup-card" id="authCard">
+      <div class="setup-logo">Days <em>since</em></div>
+      <p class="setup-sub" id="authSub">Your personal tracker. Syncs privately across all your devices.</p>
+
+      <button class="google-btn" onclick="signInWithGoogle()">
+        <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.71v2.26h2.9c1.7-1.57 2.7-3.87 2.7-6.6z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.96v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.95 10.7A5.4 5.4 0 0 1 3.67 9c0-.59.1-1.17.28-1.7V4.96H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.04l2.99-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.51.46 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.96l2.99 2.33C4.66 5.17 6.65 3.58 9 3.58z"/></svg>
+        Continue with Google
+      </button>
+
+      <div class="auth-divider">or</div>
+
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="authEmail" placeholder="you@example.com" autocomplete="email"/>
+      </div>
+      <div class="field" id="authPassField">
+        <label>Password</label>
+        <input type="password" id="authPassword" placeholder="At least 6 characters" autocomplete="current-password"/>
+      </div>
+      <a class="auth-forgot" id="authForgotLink" onclick="doForgotPassword()">Forgot password?</a>
+
+      <div class="err" id="authErr"></div>
+      <button class="btn-cta" id="authCta" onclick="doEmailAuth()">Log in →</button>
+      <div class="auth-mode-switch" id="authModeSwitch">New here? <a onclick="setAuthMode('signup')">Create an account</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ONBOARDING (shown once, right after signup) ── -->
+<div id="onboardingScreen" class="screen">
+  <div class="setup-wrap">
+    <div class="setup-card">
+      <div class="setup-logo">Days <em>since</em></div>
+      <p class="welcome-msg">Hi! I am <em>Abbiraam</em> and you — are looking good today! That is a dope hair-style and a great smile!</p>
+      <p class="welcome-msg">But do you remember how many days since you cut your hair or had a dentist appointment?</p>
+      <p class="welcome-msg welcome-punch">Let me help you with that (:</p>
+      <p class="welcome-msg">Days since is an application that helps you keep log of things that we usually tend to forget.</p>
+      <p class="welcome-msg">It makes you more <em>mindful</em> of the things you do and the <em>frequency</em> you do it.</p>
+      <p class="welcome-msg">I would encourage you to <span style="color:var(--tp)">install</span> this on your phone and start tracking the <span style="font-size:12px">little-things</span> in life!</p>
+      <p class="welcome-msg"><em>Ciao!</em></p>
+      <button class="btn-cta" onclick="finishOnboarding()">Let's go →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── LOGIN (PIN) ── -->
+<!-- Optional local lock, layered on top of Firebase auth — useful for shared devices -->
+<div id="loginScreen" class="screen">
+  <div class="pin-wrap">
+    <div class="pin-card">
+      <div class="pin-greeting">Good to see you <em>again</em> ✨</div>
+      <p class="pin-hint">Enter your PIN to unlock</p>
+      <div class="pin-dots">
+        <div class="pin-dot" id="d0"></div><div class="pin-dot" id="d1"></div>
+        <div class="pin-dot" id="d2"></div><div class="pin-dot" id="d3"></div>
+      </div>
+      <div class="pin-grid">
+        <button class="pin-key" onclick="pk('1')">1</button>
+        <button class="pin-key" onclick="pk('2')">2</button>
+        <button class="pin-key" onclick="pk('3')">3</button>
+        <button class="pin-key" onclick="pk('4')">4</button>
+        <button class="pin-key" onclick="pk('5')">5</button>
+        <button class="pin-key" onclick="pk('6')">6</button>
+        <button class="pin-key" onclick="pk('7')">7</button>
+        <button class="pin-key" onclick="pk('8')">8</button>
+        <button class="pin-key" onclick="pk('9')">9</button>
+        <button class="pin-key" onclick="pk('⌫')" style="color:var(--th)">⌫</button>
+        <button class="pin-key" onclick="pk('0')">0</button>
+        <button class="pin-key" onclick="pk('✓')" style="color:var(--amber)">✓</button>
+      </div>
+      <div class="pin-err" id="pinErr"></div>
+      <span class="pin-link" onclick="resetPinOnly()">Forgot PIN? Reset PIN only</span>
+      <div class="pin-foot">Not you? <a onclick="signOutUser()">Sign out</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── GREETING ── -->
+<div id="greetScreen" class="screen">
+  <div class="greet-wrap">
+    <div class="greet-bubble">
+      <span class="greet-emoji" id="greetEmoji"></span>
+      <div class="greet-text" id="greetText"></div>
+      <div class="greet-sub" id="greetSub"></div>
+    </div>
+    <button class="greet-continue" onclick="go('mainScreen')">Open tracker →</button>
+  </div>
+</div>
+
+<!-- ── MAIN ── -->
+<div id="mainScreen" class="screen">
+  <div class="topbar">
+    <span class="topbar-title">Days <em>since</em></span>
+    <button class="tb-btn" onclick="openSettings()">⚙</button>
+  </div>
+  <div class="main">
+    <div class="notif-strip off" id="notifStrip" onclick="askNotif()">
+      🔔 Tap to get milestone alerts when you open this page
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="items" id="items"></div>
+  </div>
+  <div class="syncbar"><div class="dot" id="dot"></div><span id="syncTxt">Not synced yet</span></div>
+
+  <!-- floating + bubble -->
+  <button class="fab" onclick="openAddModal()" aria-label="Add new item">+</button>
+  <!-- mic bubble -->
+  <button class="fab fab-mic" id="micFab" onclick="openVoiceModal()" aria-label="Log with voice">🎙</button>
+</div>
+
+<!-- ── VOICE MODAL ── -->
+<div class="voice-overlay" id="voiceOverlay">
+  <div class="voice-modal">
+    <div class="voice-title">Log with <em>voice</em></div>
+    <div class="voice-status" id="voiceStatus">Tap the mic or type below</div>
+    <div class="voice-transcript" id="voiceTranscript"></div>
+    <div class="voice-result" id="voiceResult"></div>
+    <button class="voice-mic-btn" id="voiceMicBtn" onclick="toggleListening()">🎙</button>
+    <div class="voice-text-row">
+      <input type="text" id="voiceTextInput" class="voice-text-input" placeholder="or type here… e.g. I did football 5 days ago"
+        onkeydown="if(event.key==='Enter')submitVoiceText()"/>
+      <button class="voice-text-btn" onclick="submitVoiceText()">→</button>
+    </div>
+    <div class="voice-actions">
+      <button class="voice-confirm" id="voiceConfirm" onclick="confirmVoiceLog()">Log it →</button>
+      <button class="voice-cancel" onclick="closeVoiceModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── ADD MODAL ── -->
+<div class="add-overlay" id="addOverlay" onclick="closeAddOnBg(event)">
+  <div class="add-modal">
+    <div class="add-modal-title">Track something <em>new</em></div>
+    <input class="add-modal-input" id="addName" placeholder="What do you want to track?" autocomplete="off"/>
+    <div class="add-modal-label-row" id="addLabelRow"></div>
+    <div class="add-new-lbl-row" id="addNewLblRow" style="display:none;gap:7px;margin-bottom:.75rem">
+      <input type="text" id="addNewLblInput" class="add-modal-input" style="margin-bottom:0;flex:1" placeholder="Label name…"/>
+      <button onclick="confirmNewLabel()" style="padding:10px 14px;font-size:13px;font-weight:600;background:var(--amber);color:#fff;border:none;border-radius:12px;cursor:pointer;white-space:nowrap">Add</button>
+      <button onclick="cancelNewLabel()" style="padding:10px 10px;font-size:13px;background:transparent;color:var(--th);border:1.5px solid var(--border);border-radius:12px;cursor:pointer">✕</button>
+    </div>
+    <div class="add-modal-actions">
+      <button class="add-modal-cancel" onclick="closeAddModal()">Cancel</button>
+      <button class="add-modal-submit" onclick="submitAdd()">Add →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── SETTINGS PANEL ── -->
+<div class="settings-overlay" id="settingsOverlay" onclick="closeSettingsOnBg(event)">
+  <div class="settings-panel">
+    <div class="settings-head">
+      <h2>Settings <em>&</em> more</h2>
+      <button class="settings-close" onclick="closeSettings()">×</button>
+    </div>
+
+    <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:8px">
+      <div class="setting-info">
+        <strong>Quote display duration</strong>
+        <small id="quoteDurLabel">8 seconds</small>
+      </div>
+      <input type="range" id="quoteDurSlider" min="3" max="20" step="1" value="8"
+        style="width:100%;accent-color:var(--amber)"
+        oninput="updateQuoteDur(this.value)" onchange="saveQuoteDur(this.value)"/>
+      <div style="display:flex;justify-content:space-between;width:100%;font-size:11px;color:var(--th)">
+        <span>3s</span><span>20s</span>
+      </div>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-info">
+        <strong>Sort by days ascending</strong>
+        <small>Show items with fewest days since first, when viewing All</small>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="sortToggle" onchange="toggleSortSetting()"/>
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-info">
+        <strong>Dark mode</strong>
+        <small>Switch to a darker, easier-on-the-eyes theme</small>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="darkToggle" onchange="toggleDarkMode()"/>
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-info">
+        <strong>PIN protection</strong>
+        <small>Lock the app behind a 4-digit PIN</small>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="pinEnabled" onchange="togglePinSetting()"/>
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <div class="pin-change-row" id="pinChangeRow">
+      <input type="password" id="pinNew" maxlength="4" placeholder="New PIN (4 digits)" inputmode="numeric"/>
+      <input type="password" id="pinNew2" maxlength="4" placeholder="Confirm PIN" inputmode="numeric"/>
+      <div class="err" id="pinChangeErr" style="font-size:12px"></div>
+      <button class="pin-save-btn" onclick="savePinChange()">Save PIN</button>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-info">
+        <strong>Lock now</strong>
+        <small>Return to the PIN screen</small>
+      </div>
+      <button class="tb-btn" onclick="lockApp()" id="lockNowBtn">🔒 Lock</button>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-info">
+        <strong>Know the creator</strong>
+        <small>Check out who built this app</small>
+      </div>
+      <button class="tb-btn" onclick="window.open('https://scrutiniz3r.github.io/resume-on-a-bike/','_blank')">Visit →</button>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-info">
+        <strong>Buy me a chaya ☕</strong>
+        <small>and a hot paruppu vada on a rainy evening</small>
+      </div>
+      <button class="tb-btn" onclick="copyUPI(this)">makemehappynow@axl</button>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-info">
+        <strong>Install app</strong>
+        <small>Add to home screen for quick access</small>
+      </div>
+      <button class="tb-btn" id="installBtn" onclick="doInstall()">⊕ Install</button>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-info">
+        <strong id="accountEmailLabel">Signed in</strong>
+        <small id="accountEmailValue">—</small>
+      </div>
+      <button class="tb-btn" onclick="signOutUser()">Sign out</button>
+    </div>
+
+    <div class="setting-row" id="changePasswordRow" style="display:none">
+      <div class="setting-info">
+        <strong>Change password</strong>
+        <small>Update your account password</small>
+      </div>
+      <button class="tb-btn" onclick="doForgotPassword()">Email link</button>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-info">
+        <strong>Import from old Gist</strong>
+        <small>One-time migration if you used the GitHub Gist version before</small>
+      </div>
+      <button class="tb-btn" onclick="openGistImport()">↑ Import</button>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-info">
+        <strong>Export data</strong>
+        <small>Download all your data as a JSON file</small>
+      </div>
+      <button class="tb-btn" onclick="exportData()">↓ Export</button>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-info">
+        <strong>Import data</strong>
+        <small>Restore from a previously exported file</small>
+      </div>
+      <button class="tb-btn" onclick="document.getElementById('importFileInput').click()">↑ Import</button>
+      <input type="file" id="importFileInput" accept="application/json" style="display:none" onchange="importData(event)"/>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-info">
+        <strong>Delete account</strong>
+        <small>Permanently deletes your account and all data</small>
+      </div>
+      <button class="tb-btn" style="color:var(--rose);border-color:var(--rose)" onclick="deleteAccount()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── GIST IMPORT MODAL (migration for old users) ── -->
+<div class="add-overlay" id="gistImportOverlay">
+  <div class="add-modal" style="max-width:400px">
+    <div class="add-modal-title">Import from <em>old Gist</em></div>
+    <p style="font-size:13px;color:var(--ts);margin-bottom:1.25rem;line-height:1.6">If you used the GitHub Gist version of this app before, paste your old Gist ID and token below to pull your data in. This won't overwrite anything already here — it merges.</p>
+    <div class="field">
+      <label>GitHub Gist ID</label>
+      <input type="text" id="importGistId" class="add-modal-input" placeholder="e.g. 4b2d8f3e1a9c0765"/>
+    </div>
+    <div class="field">
+      <label>GitHub Token</label>
+      <input type="password" id="importGistToken" class="add-modal-input" placeholder="ghp_…"/>
+    </div>
+    <div class="err" id="gistImportErr"></div>
+    <div class="add-modal-actions">
+      <button class="add-modal-cancel" onclick="closeGistImport()">Cancel</button>
+      <button class="add-modal-submit" onclick="doGistImport()">Import →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── DETAIL SHEET ── -->
+<div class="sheet-overlay" id="sheetOverlay" onclick="closeSheetOnBg(event)">
+  <div class="sheet" id="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head">
+      <div>
+        <div class="sheet-count" id="sheetCount">—</div>
+        <div style="font-size:11px;color:var(--th);margin-top:2px" id="sheetUnit">days since</div>
+      </div>
+      <div class="sheet-info">
+        <div style="display:flex;align-items:center;gap:6px">
+          <div class="sheet-name" id="sheetName"></div>
+          <button onclick="toggleRename()" style="font-size:11px;color:var(--th);background:none;border:none;cursor:pointer;padding:2px 4px;border-radius:6px" title="Rename">✎</button>
+        </div>
+        <div id="sheetRenameRow" style="display:none;margin-top:6px;gap:6px;flex-wrap:wrap">
+          <input type="text" id="sheetRenameInput" style="flex:1;min-width:120px;padding:7px 10px;font-size:14px;border:1.5px solid var(--border);border-radius:10px;background:var(--bg);color:var(--tp);font-family:var(--sans);outline:none"/>
+          <button onclick="saveRename()" style="padding:7px 12px;font-size:13px;font-weight:600;background:var(--amber);color:#fff;border:none;border-radius:10px;cursor:pointer">Save</button>
+          <button onclick="toggleRename()" style="padding:7px 10px;font-size:13px;background:transparent;color:var(--th);border:1.5px solid var(--border);border-radius:10px;cursor:pointer">Cancel</button>
+        </div>
+        <div class="sheet-sub" id="sheetSub"></div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+          <div id="sheetLbl"></div>
+          <button id="sheetLblEditBtn" onclick="toggleLabelEdit()" style="font-size:11px;color:var(--th);background:none;border:1px dashed var(--border);cursor:pointer;padding:3px 8px;border-radius:6px;font-family:var(--sans)">Add label</button>
+        </div>
+        <div id="sheetLblRow" style="display:none;margin-top:6px;gap:6px;flex-wrap:wrap">
+          <select id="sheetLblSel" style="flex:1;padding:7px 10px;font-size:13px;border:1.5px solid var(--border);border-radius:10px;background:var(--bg);color:var(--tp);font-family:var(--sans);outline:none"></select>
+          <button onclick="saveLabelEdit()" style="padding:7px 12px;font-size:13px;font-weight:600;background:var(--amber);color:#fff;border:none;border-radius:10px;cursor:pointer">Save</button>
+          <button onclick="toggleLabelEdit()" style="padding:7px 10px;font-size:13px;background:transparent;color:var(--th);border:1.5px solid var(--border);border-radius:10px;cursor:pointer">Cancel</button>
+        </div>
+      </div>
+      <button class="sheet-close" onclick="closeSheet()">×</button>
+    </div>
+    <div id="sheetMs"></div>
+    <div class="sheet-sec">
+      <div class="sheet-lbl-sm">Notes</div>
+      <textarea id="sheetNotes" class="sheet-notes" rows="1" placeholder="Treat me like your 5th standard rough-book" oninput="saveNotes()"></textarea>
+    </div>
+    <div class="sheet-sec">
+      <div class="sheet-lbl-sm">Remind me when it reaches</div>
+      <div class="entry-row">
+        <input type="number" class="date-in" id="sheetReminder" placeholder="E.g. 69" min="1" oninput="updateReminderBtnState()"/>
+        <span style="font-size:12px;color:var(--th);align-self:center">days</span>
+        <button class="btn-add" id="sheetReminderBtn" onclick="saveReminder()">Set</button>
+      </div>
+    </div>
+    <div class="sheet-sec">
+      <div class="sheet-lbl-sm">Log an entry</div>
+      <div class="entry-row">
+        <input type="date" class="date-in" id="sheetDate" oninput="updateEntryBtnLabel()"/>
+        <button class="btn-add" id="sheetEntryBtn" onclick="sheetAddEntry()">✓ Did it today</button>
+      </div>
+    </div>
+    <div class="sheet-sec">
+      <div class="sheet-lbl-sm">History</div>
+      <div class="hist-list" id="sheetHist"></div>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn-del" onclick="sheetDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ── TILE CONTEXT MENU ── -->
+<div class="ctx-overlay" id="ctxOverlay">
+  <div class="ctx-backdrop" onclick="closeCtxMenu()"></div>
+  <div class="ctx-menu" id="ctxMenu">
+    <div class="ctx-title" id="ctxTitle"></div>
+    <button class="ctx-item" onclick="ctxDidToday()">✓ Did it today</button>
+    <button class="ctx-item" onclick="ctxTogglePin()" id="ctxPinBtn">📌 Pin to top</button>
+    <button class="ctx-item ctx-danger" onclick="ctxDelete()">🗑 Delete</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="lblModal">
+  <div class="modal">
+    <h2>Manage <em>labels</em></h2>
+    <div class="lbl-list" id="lblList"></div>
+    <div class="new-lbl">
+      <input type="text" id="newLblTxt" placeholder="New label…"/>
+      <button onclick="addLabel()">Add</button>
+    </div>
+    <div class="modal-foot"><button onclick="closeLblModal()">Done</button></div>
+  </div>
+</div>
+
+<script>
+const CK='dsc_conf', DK='dsc_data', NK='dsc_nf';
+let conf=null, data=null, filter='', pin='';
+let deferredInstall=null;
+// ── FIREBASE STATE ──
+let currentUser=null;      // Firebase auth user object
+let userSettings={};       // synced settings doc: { pinHash, sortAscending, theme, quoteDuration, onboardingDone }
+let userDocRef=null;       // Firestore doc reference for this user
+let unsubUserDoc=null;     // real-time listener unsubscribe function
+let authMode='login';      // 'login' | 'signup'
+
+// Pastel palette
+const PALETTE=['#F2C49E','#A8C5DA','#C5D9B0','#D4B8E0','#F5D98A','#F4A8B8','#A8D8C8','#D4B8A0','#C68A5A','#B89AD8'];
+
+// ── STORAGE ──
+const lsGet=k=>{try{return JSON.parse(localStorage.getItem(k))}catch{return null}};
+const lsSet=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+function defData(){return{items:[],labels:[
+  {name:'Travel',color:'#F5D98A'},
+  {name:'Fitness',color:'#C5D9B0'},
+  {name:'Health',color:'#F4A8B8'},
+  {name:'Bike',color:'#A8C5DA'},
+]}}
+function normLabels(l){return(l||[]).map((x,i)=>typeof x==='string'?{name:x,color:PALETTE[i%PALETTE.length]}:x)}
+function hash(s){let h=0;for(let i=0;i<s.length;i++)h=(Math.imul(31,h)+s.charCodeAt(i))|0;return h.toString(36)}
+
+// ── LOCAL DATE (fixes timezone bug) ──
+function localDate(d){
+  const dt=d?new Date(d):new Date();
+  return`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+}
+function today(){return localDate()}
+
+// ── ITEM NORMALISE ──
+function norm(item){
+  let all=[...(item.history||[])];
+  if(item.lastDate)all.push(item.lastDate);
+  all=all.map(h=>h?h.split('T')[0]:null).filter(Boolean);
+  all=[...new Set(all)].sort();
+  item.history=all;
+  item.lastDate=all.length?all[all.length-1]:null;
+  item._open=false; // always reset open state on load
+  return item;
+}
+function addEntry(item,dk){
+  const all=[...new Set([...(item.history||[]),dk])].sort();
+  item.history=all;item.lastDate=all[all.length-1];return item;
+}
+function delEntry(item,dk){
+  item.history=(item.history||[]).filter(h=>h!==dk);
+  item.lastDate=item.history.length?item.history[item.history.length-1]:null;
+  return item;
+}
+
+// ── TIME ──
+function daysSince(dk){
+  if(!dk)return null;
+  const a=new Date(dk.split('T')[0]),b=new Date(today());
+  return Math.round((b-a)/86400000);
+}
+function avgInterval(h){
+  if(!h||h.length<2)return null;
+  const d=h.map(x=>new Date(x));
+  let t=0;for(let i=1;i<d.length;i++)t+=d[i]-d[i-1];
+  return Math.round(t/(d.length-1)/86400000);
+}
+function milestone(days,item){
+  if(days===null)return null;
+  if(item&&item.reminderAt&&days===item.reminderAt) return `your reminder at ${days} days`;
+  if(days===30)return'1 month';if(days===69)return'69 days';
+  if(days>=100&&days%100===0)return days+' days';return null;
+}
+function fmtDate(dk){
+  const[y,m,d]=dk.split('-').map(Number);
+  return new Date(y,m-1,d).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'});
+}
+function darken(hex,f=.52){
+  const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+  let r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  if(isDark){
+    const lf=1.6;
+    r=Math.min(255,Math.round(r+(255-r)*(1-1/lf)));
+    g=Math.min(255,Math.round(g+(255-g)*(1-1/lf)));
+    b=Math.min(255,Math.round(b+(255-b)*(1-1/lf)));
+  } else {
+    r=Math.round(r*f);g=Math.round(g*f);b=Math.round(b*f);
+  }
+  return`#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
+}
+// Returns a translucent tint of the label colour — stronger in dark mode
+function colBg(hex){
+  const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+  return hex+(isDark?'55':'40');
+}
+// In light mode use the raw pastel as border (original look); dark mode needs more opacity
+function colBorder(hex){
+  const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+  return isDark?hex+'AA':hex;
+}
+
+// ── SCREENS ──
+function go(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active')}
+
+// ── 48 LAWS OF POWER QUOTES ──
+const LAWS=[
+  {law:'Law 1',title:'Never outshine the master',quote:'Always make those above you feel comfortably superior. In your desire to please and impress them, do not go too far in displaying your talents or you might accomplish the opposite.'},
+  {law:'Law 3',title:'Conceal your intentions',quote:'Keep people off-balance and in the dark by never revealing the purpose behind your actions. If they have no clue what you are up to, they cannot prepare a defense.'},
+  {law:'Law 4',title:'Always say less than necessary',quote:'When you are trying to impress people with words, the more you say, the more common you appear, and the less in control. Even if you are saying something banal, it will seem original if you make it vague, open-ended, and sphinxlike.'},
+  {law:'Law 5',title:'So much depends on reputation',quote:'Reputation is the cornerstone of power. Through reputation alone you can intimidate and win; once it slips, however, you are vulnerable and will be attacked on all sides.'},
+  {law:'Law 6',title:'Court attention at all costs',quote:'Everything is judged by its appearance; what is unseen counts for nothing. Never let yourself get lost in the crowd, then, or buried in oblivion. Stand out.'},
+  {law:'Law 9',title:'Win through your actions, never through argument',quote:'Any momentary triumph you think you have gained through argument is really a Pyrrhic victory: the resentment and ill will you stir up is stronger and lasts longer than any change of opinion.'},
+  {law:'Law 10',title:'Infection: avoid the unhappy and unlucky',quote:'You can die from someone else\'s misery — emotional states are as infectious as diseases. Associate with the happy and fortunate instead.'},
+  {law:'Law 13',title:'Appeal to self-interest, never to mercy',quote:'If you need to turn to an ally for help, do not bother to remind them of your past assistance and good deeds. Find their self-interest instead.'},
+  {law:'Law 14',title:'Pose as a friend, work as a spy',quote:'Knowing about your rival is critical. Use spies to gather valuable information that will keep you a step ahead.'},
+  {law:'Law 15',title:'Crush your enemy totally',quote:'More is lost through stopping halfway than through total annihilation. The enemy will recover and will seek revenge. Crush him, not only in body but in spirit.'},
+  {law:'Law 16',title:'Use absence to increase respect',quote:'Too much circulation makes the price go down. The more you are seen and heard from, the more common you appear. If you are already established in a group, temporarily withdraw.'},
+  {law:'Law 17',title:'Keep others in suspended terror',quote:'Humans are creatures of habit with an insatiable need to see familiarity in other people\'s actions. Your predictability gives them a sense of control. Turn the tables: be deliberately unpredictable.'},
+  {law:'Law 19',title:'Know who you\'re dealing with',quote:'Never assume that the person you are dealing with is weaker or less important than you are. Some people are best approached with caution.'},
+  {law:'Law 21',title:'Play a sucker to catch a sucker',quote:'No one likes feeling stupider than the next person. The trick is to make your victims feel smart — and not just smart, but smarter than you are.'},
+  {law:'Law 25',title:'Re-create yourself',quote:'Do not accept the roles that society foists on you. Re-create yourself by forging a new identity, one that commands attention and never bores the audience.'},
+  {law:'Law 28',title:'Enter action with boldness',quote:'If you are unsure of a course of action, do not attempt it. Your doubts and hesitations will infect your execution. Timidity is dangerous.'},
+  {law:'Law 29',title:'Plan all the way to the end',quote:'The ending is everything. Plan all the way to it, taking into account all the possible consequences, obstacles, and twists of fortune that might reverse your hard work.'},
+  {law:'Law 30',title:'Make your accomplishments seem effortless',quote:'Your actions must seem natural and executed with ease. All the toil and practice that go into them, and also all the clever tricks, must be concealed.'},
+  {law:'Law 33',title:'Discover each man\'s thumbscrew',quote:'Everyone has a weakness, a gap in the castle wall. That weakness is usually an insecurity, an uncontrollable emotion or need; it can also be a small secret pleasure.'},
+  {law:'Law 34',title:'Be royal in your own fashion',quote:'The way you carry yourself will often determine how you are treated. In the long run, appearing vulgar or common will make people disrespect you.'},
+  {law:'Law 35',title:'Master the art of timing',quote:'Never seem to be in a hurry — hurrying betrays a lack of control over yourself, and over time. Always seem patient, as if you know that everything will come to you eventually.'},
+  {law:'Law 36',title:'Disdain things you cannot have',quote:'By acknowledging a petty problem you give it existence and credibility. The more attention you pay an enemy, the stronger you make them.'},
+  {law:'Law 38',title:'Think as you like but behave like others',quote:'If you make a show of going against the times, flaunting your unconventional ideas, people will think that you only want attention. It is far safer to blend in.'},
+  {law:'Law 40',title:'Despise the free lunch',quote:'What is offered for free is dangerous — it usually involves either a trick or a hidden obligation. What has worth is worth paying for.'},
+  {law:'Law 43',title:'Work on the hearts and minds of others',quote:'Coercion creates a reaction that will eventually work against you. You must seduce others into wanting to move in your direction.'},
+  {law:'Law 44',title:'Disarm and infuriate with the mirror effect',quote:'The mirror reflects reality, but it is also the perfect tool for deception: when you mirror your enemies, doing exactly as they do, they cannot figure out your strategy.'},
+  {law:'Law 46',title:'Never appear too perfect',quote:'Appearing better than others is always dangerous, but most dangerous of all is to appear to have no faults or weaknesses. It is smart to occasionally display defects.'},
+  {law:'Law 47',title:'Do not go past the mark you aimed for',quote:'In the heat of victory, arrogance and overconfidence can push you past the goal you had aimed for, and by going too far, you make more enemies than you defeat.'},
+  {law:'Law 48',title:'Assume formlessness',quote:'By taking a shape, by having a visible plan, you open yourself to attack. Instead of taking a form for your enemy to grasp, keep yourself adaptable and on the move.'},
+];
+
+function buildGreeting(){
+  if(sessionStorage.getItem('dsc_skip_greet')){
+    sessionStorage.removeItem('dsc_skip_greet');
+    go('mainScreen');
+    return;
+  }
+  const q=LAWS[Math.floor(Math.random()*LAWS.length)];
+  document.getElementById('greetEmoji').textContent='';
+  document.getElementById('greetEmoji').style.display='none';
+  document.getElementById('greetText').innerHTML=`<span style="font-size:12px;font-family:var(--sans);font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--th)">${q.law}</span><br><em>${q.title}</em>`;
+  document.getElementById('greetSub').textContent='\u201C'+q.quote+'\u201D';
+  go('greetScreen');
+  setTimeout(()=>go('mainScreen'),getQuoteDuration());
+}
+
+// ── BOOT — Firebase auth gate ──
+function boot(){
+  auth.onAuthStateChanged(async user=>{
+    if(!user){
+      currentUser=null;
+      if(unsubUserDoc){ unsubUserDoc(); unsubUserDoc=null; }
+      go('setupScreen');
+      return;
+    }
+    currentUser=user;
+    userDocRef=dbFs.collection('users').doc(user.uid);
+    await loadUserData();     // one-time initial load
+    listenUserData();          // then start real-time listening for cross-device sync
+
+    if(!userSettings.onboardingDone){
+      // Fallback: if they already have items somehow, skip onboarding automatically
+      if(data.items&&data.items.length){
+        userSettings.onboardingDone=true;
+        saveSettingsDoc();
+      } else {
+        go('onboardingScreen');
+        return;
+      }
+    }
+
+    if(userSettings.pinHash){ go('loginScreen'); }
+    else{
+      buildGreeting();
+      renderAll();checkNotifBar();
+      syncSettingToggles();
+      loadSecrets();
+    }
+  });
+}
+
+function finishOnboarding(){
+  userSettings.onboardingDone=true;
+  saveSettingsDoc();
+  buildGreeting();
+  renderAll();checkNotifBar();
+  syncSettingToggles();
+  loadSecrets();
+}
+
+// ── FIRESTORE DATA LAYER ──
+// The whole tracker (items + labels) lives in ONE document per user:
+//   users/{uid} = { items:[...], labels:[...], settings:{...}, updatedAt }
+// This keeps every existing render/action function (which already works on
+// `data.items` / `data.labels` in memory) unchanged — Firestore just replaces
+// the Gist as the place that blob is persisted and synced.
+async function loadUserData(){
+  setSyncStatus('busy','Loading…');
+  try{
+    const snap=await userDocRef.get();
+    if(snap.exists){
+      const d=snap.data();
+      data={items:(d.items||[]).map(norm),labels:normLabels(d.labels||defData().labels)};
+      userSettings=d.settings||{};
+    } else {
+      data=defData();
+      userSettings={onboardingDone:false};
+      await userDocRef.set({items:data.items,labels:data.labels,settings:userSettings,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+    }
+    setSyncStatus('ok','Synced');
+  }catch(e){
+    console.error('loadUserData failed',e);
+    data=defData();
+    setSyncStatus('err','Could not load — check connection');
+  }
+}
+
+// Real-time listener — picks up changes made on OTHER devices automatically
+function listenUserData(){
+  if(unsubUserDoc) unsubUserDoc();
+  unsubUserDoc=userDocRef.onSnapshot(snap=>{
+    if(!snap.exists)return;
+    // hasPendingWrites=true means this snapshot is our OWN optimistic local write
+    // echoing back — skip re-rendering since we already rendered it.
+    if(snap.metadata.hasPendingWrites)return;
+    const d=snap.data();
+    data={items:(d.items||[]).map(norm),labels:normLabels(d.labels||defData().labels)};
+    userSettings=d.settings||userSettings;
+    renderAll();checkMilestones();
+    setSyncStatus('ok','Synced from another device');
+  },err=>{ console.error('listenUserData error',err); });
+}
+
+let _saveTimer=null;
+function saveUserData(){
+  // Debounced — avoid hammering Firestore on rapid successive edits (e.g. typing notes)
+  clearTimeout(_saveTimer);
+  setSyncStatus('busy','Saving…');
+  _saveTimer=setTimeout(async()=>{
+    try{
+      await userDocRef.set({
+        items:data.items,
+        labels:data.labels,
+        settings:userSettings,
+        updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+      });
+      setSyncStatus('ok','Saved '+new Date().toLocaleTimeString());
+    }catch(e){
+      console.error('saveUserData failed',e);
+      setSyncStatus('err','Save failed — will retry on next change');
+    }
+  },500);
+}
+function saveSettingsDoc(){
+  userDocRef.set({settings:userSettings},{merge:true}).catch(e=>console.error('saveSettingsDoc failed',e));
+}
+// Back-compat shim: every existing call site in the app calls pushGist()
+// after mutating `data` — keep that name working by pointing it at Firestore.
+async function pushGist(){ saveUserData(); }
+async function pullGist(){ await loadUserData(); renderAll(); }
+async function syncNow(){ await pullGist(); }
+function setSyncStatus(s,m){document.getElementById('dot').className='dot'+(s?' '+s:'');document.getElementById('syncTxt').textContent=m}
+
+// ── AUTH ──
+function setAuthMode(mode){
+  authMode=mode;
+  const isLogin=mode==='login';
+  document.getElementById('authCta').textContent=isLogin?'Log in →':'Create account →';
+  document.getElementById('authModeSwitch').innerHTML=isLogin
+    ?`New here? <a onclick="setAuthMode('signup')">Create an account</a>`
+    :`Already have an account? <a onclick="setAuthMode('login')">Log in</a>`;
+  document.getElementById('authForgotLink').style.display=isLogin?'':'none';
+  document.getElementById('authErr').textContent='';
+}
+async function signInWithGoogle(){
+  const err=document.getElementById('authErr');
+  err.style.color='var(--rose)';err.textContent='';
+  try{
+    const provider=new firebase.auth.GoogleAuthProvider();
+    await auth.signInWithPopup(provider);
+    // onAuthStateChanged fires automatically from here
+  }catch(e){
+    err.textContent=e.message||'Google sign-in failed';
+    console.error(e);
+  }
+}
+async function doEmailAuth(){
+  const email=document.getElementById('authEmail').value.trim();
+  const password=document.getElementById('authPassword').value;
+  const err=document.getElementById('authErr');
+  err.style.color='var(--rose)';
+  if(!email){err.textContent='Email is required';return}
+  if(!password||password.length<6){err.textContent='Password must be at least 6 characters';return}
+  try{
+    if(authMode==='signup'){
+      await auth.createUserWithEmailAndPassword(email,password);
+    } else {
+      await auth.signInWithEmailAndPassword(email,password);
+    }
+  }catch(e){
+    const map={
+      'auth/email-already-in-use':'That email already has an account — try logging in instead.',
+      'auth/invalid-credential':'Wrong email or password.',
+      'auth/wrong-password':'Wrong password.',
+      'auth/user-not-found':'No account with that email — try creating one.',
+      'auth/weak-password':'Password is too weak — use at least 6 characters.',
+      'auth/invalid-email':'That email address looks invalid.',
+    };
+    err.textContent=map[e.code]||e.message;
+  }
+}
+async function doForgotPassword(){
+  const email=document.getElementById('authEmail').value.trim();
+  const err=document.getElementById('authErr');
+  err.style.color='var(--ts)';
+  if(!email){err.textContent='Enter your email above first, then tap this again.';return}
+  try{
+    await auth.sendPasswordResetEmail(email);
+    err.style.color='var(--sage)';
+    err.textContent='Reset link sent — check your email.';
+  }catch(e){
+    err.style.color='var(--rose)';
+    err.textContent=e.message;
+  }
+}
+function signOutUser(){
+  auth.signOut();
+  closeSettings();
+}
+async function deleteAccount(){
+  const ok=await showConfirm('Delete account','This permanently deletes your account and ALL your data. This cannot be undone. Continue?');
+  if(!ok)return;
+  try{
+    await userDocRef.delete();
+    await currentUser.delete();
+  }catch(e){
+    if(e.code==='auth/requires-recent-login'){
+      alert('For security, please sign out and log back in, then try deleting your account again right after.');
+    } else {
+      alert('Could not delete account: '+e.message);
+    }
+    console.error(e);
+  }
+}
+
+// ── PIN (optional local lock, layered on top of Firebase auth) ──
+function pk(k){
+  document.getElementById('pinErr').textContent='';
+  if(k==='⌫')pin=pin.slice(0,-1);
+  else if(k==='✓'){checkPin();return}
+  else if(pin.length<4)pin+=k;
+  if(pin.length===4)setTimeout(checkPin,80);
+  dots();
+}
+function dots(){for(let i=0;i<4;i++)document.getElementById('d'+i).classList.toggle('filled',i<pin.length)}
+function checkPin(){
+  if(pin.length<4){document.getElementById('pinErr').textContent='Enter all 4 digits';return}
+  if(hash(pin)!==userSettings.pinHash){document.getElementById('pinErr').textContent='Wrong PIN. Try again.';pin='';dots();return}
+  pin='';dots();
+  buildGreeting();renderAll();checkNotifBar();syncSettingToggles();loadSecrets();
+}
+function lockApp(){
+  if(!userSettings.pinHash){closeSettings();return}
+  pin='';dots();closeSettings();go('loginScreen');
+}
+function resetPinOnly(){
+  if(confirm('Remove your PIN? You will need to sign in again to set a new one from Settings.')){
+    userSettings.pinHash=null;
+    saveSettingsDoc();
+    go('mainScreen');
+  }
+}
+
+// ── SETTINGS ──
+function openSettings(){
+  const el=document.getElementById('settingsOverlay');
+  el.classList.add('on');
+  document.getElementById('pinEnabled').checked=!!userSettings.pinHash;
+  document.getElementById('pinChangeRow').classList.toggle('show',!!userSettings.pinHash);
+  document.getElementById('lockNowBtn').style.display=userSettings.pinHash?'':'none';
+  document.getElementById('darkToggle').checked=localStorage.getItem('dsc_theme')==='dark';
+  document.getElementById('sortToggle').checked=getSortSetting();
+  const qd=parseInt(localStorage.getItem('dsc_quote_dur'),10)||8;
+  document.getElementById('quoteDurSlider').value=qd;
+  document.getElementById('quoteDurLabel').textContent=qd+' seconds';
+  if(currentUser){
+    document.getElementById('accountEmailValue').textContent=currentUser.email||'Signed in with Google';
+    const isPasswordUser=currentUser.providerData.some(p=>p.providerId==='password');
+    document.getElementById('changePasswordRow').style.display=isPasswordUser?'':'none';
+  }
+}
+function closeSettings(){document.getElementById('settingsOverlay').classList.remove('on')}
+function closeSettingsOnBg(e){if(e.target===document.getElementById('settingsOverlay'))closeSettings()}
+
+function togglePinSetting(){
+  const on=document.getElementById('pinEnabled').checked;
+  document.getElementById('pinChangeRow').classList.toggle('show',on);
+  if(!on){userSettings.pinHash=null;saveSettingsDoc();document.getElementById('lockNowBtn').style.display='none';}
+}
+function savePinChange(){
+  const p=document.getElementById('pinNew').value.trim();
+  const p2=document.getElementById('pinNew2').value.trim();
+  const err=document.getElementById('pinChangeErr');
+  if(!/^\d{4}$/.test(p)){err.textContent='Must be 4 digits';return}
+  if(p!==p2){err.textContent='PINs do not match';return}
+  userSettings.pinHash=hash(p);
+  saveSettingsDoc();
+  document.getElementById('lockNowBtn').style.display='';
+  err.textContent='';
+  document.getElementById('pinNew').value='';
+  document.getElementById('pinNew2').value='';
+  err.style.color='var(--sage)';err.textContent='PIN saved ✓';
+  setTimeout(()=>err.textContent='',2000);
+}
+
+// ── PWA INSTALL ──
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();deferredInstall=e;
+});
+window.addEventListener('appinstalled',()=>{
+  document.getElementById('installBtn').style.display='none';deferredInstall=null;
+});
+async function doInstall(){
+  if(deferredInstall){
+    deferredInstall.prompt();
+    const{outcome}=await deferredInstall.userChoice;
+    if(outcome==='accepted')deferredInstall=null;
+  } else {
+    const ua=navigator.userAgent;
+    let msg='To install this app:';
+    if(/iPhone|iPad/.test(ua)) msg='On iPhone/iPad:\nTap the Share button (□↑) → "Add to Home Screen"';
+    else if(/Android/.test(ua)) msg='On Android Chrome:\nTap ⋮ (menu) → "Add to Home Screen" or "Install app"';
+    else msg='On desktop Chrome/Edge:\nLook for the ⊕ icon in the address bar and click it.\n\nIf you already installed it, you\'re all set!';
+    alert(msg);
+  }
+}
+
+// ── GIST IMPORT (one-time migration for users of the old Gist-based version) ──
+function openGistImport(){
+  document.getElementById('importGistId').value='';
+  document.getElementById('importGistToken').value='';
+  document.getElementById('gistImportErr').textContent='';
+  document.getElementById('gistImportOverlay').classList.add('on');
+}
+function closeGistImport(){ document.getElementById('gistImportOverlay').classList.remove('on'); }
+async function doGistImport(){
+  const g=document.getElementById('importGistId').value.trim();
+  const t=document.getElementById('importGistToken').value.trim();
+  const err=document.getElementById('gistImportErr');
+  if(!g||!t){err.textContent='Both fields are required';return}
+  err.style.color='var(--ts)';err.textContent='Fetching your old data…';
+  try{
+    const r=await fetch(`https://api.github.com/gists/${g}`,{headers:{Authorization:`token ${t}`,Accept:'application/vnd.github.v3+json'}});
+    if(!r.ok){err.style.color='var(--rose)';err.textContent='Gist not found or invalid token';return}
+    const j=await r.json();
+    const raw=(j.files['days-since.json']||{}).content||'{}';
+    const remote=JSON.parse(raw);
+    if(!remote.items||!remote.items.length){err.style.color='var(--rose)';err.textContent='That Gist has no items to import';return}
+
+    // Merge: add any imported items whose name isn't already present
+    const existingNames=new Set(data.items.map(it=>it.name.toLowerCase()));
+    const newItems=remote.items.filter(it=>!existingNames.has((it.name||'').toLowerCase())).map(norm);
+    data.items=[...data.items,...newItems];
+    if(remote.labels){
+      const existingLabelNames=new Set(data.labels.map(l=>(l.name||l).toLowerCase()));
+      const newLabels=normLabels(remote.labels).filter(l=>!existingLabelNames.has(l.name.toLowerCase()));
+      data.labels=[...data.labels,...newLabels];
+    }
+    saveUserData();
+    renderAll();
+    closeGistImport();
+    closeSettings();
+  }catch(e){
+    err.style.color='var(--rose)';
+    err.textContent='Could not import — check the Gist ID and token';
+    console.error(e);
+  }
+}
+
+// ── RENDER ──
+function renderAll(){renderChips();renderItems()}
+function renderChips(){
+  const lbls=data.labels||[];
+  let h=`<button class="chip${filter===''?' on':''}" data-filter="">All</button>`;
+  lbls.forEach(l=>{
+    const n=l.name||l,c=l.color||null;
+    let st='';
+    if(c){
+      if(filter===n){
+        st=`style="background:${colBg(c)};border-color:${colBorder(c)};color:${darken(c)}"`;
+      } else {
+        // show colour even when not selected, for visibility when "All" is active
+        st=`style="background:${colBg(c)};border-color:${colBorder(c)};color:${darken(c)};opacity:.85"`;
+      }
+    }
+    h+=`<button class="chip${filter===n?' on':''}" ${st} data-filter="${n.replace(/"/g,'&quot;')}">${n}</button>`;
+  });
+  h+=`<button class="chip mgmt" onclick="openLblModal()" title="Edit labels">✎</button>`;
+  const el=document.getElementById('chips');
+  el.innerHTML=h;
+  // attach click handlers safely via data attribute
+  el.querySelectorAll('[data-filter]').forEach(btn=>{
+    btn.addEventListener('click',()=>setFilter(btn.dataset.filter));
+  });
+}
+function renderItems(){
+  const el=document.getElementById('items');
+  let list=(data.items||[]).filter(it=>!filter||it.label===filter);
+  if(getSortSetting()){
+    list=[...list].sort((a,b)=>{
+      const da=daysSince(a.lastDate), db=daysSince(b.lastDate);
+      if(da===null&&db===null)return 0;
+      if(da===null)return 1;
+      if(db===null)return -1;
+      return da-db;
+    });
+  }
+  // Pinned items always float to top regardless of sort
+  list=[...list].sort((a,b)=>(b.pinned?1:0)-(a.pinned?1:0));
+  if(!list.length){
+    el.innerHTML=`<div class="empty-state"><div class="big">${filter?`Nothing in <em>${filter}</em> yet`:'Nothing tracked <em>yet</em>'}</div><small>${filter?'Add something with this label to see it here.':'Add your first item above to get started.'}</small></div>`;
+    return;
+  }
+  el.innerHTML=list.map(item=>{
+    const i=data.items.indexOf(item);
+    const days=daysSince(item.lastDate);
+    const ms=milestone(days,item);
+    const lblObj=(data.labels||[]).find(l=>(l.name||l)===item.label);
+    const col=lblObj?.color||null;
+    const dc=darken(col||'#7A6A56');
+    const countColor=col?darken(col,.75):(days===null||days>30?'var(--rose)':days>7?'var(--amber)':'var(--sage)');
+    const stripe=col?`<div class="tile-stripe" style="background:${col}"></div>`:'';
+    const avg=avgInterval(item.history);
+    return`<div class="tile${ms?' milestone':''}${item.reminderAt&&days===item.reminderAt?' reminder-hit':''}" id="tile-${i}" data-idx="${i}">
+      ${stripe}
+      ${item.pinned?`<div class="tile-pin">📌</div>`:''}
+      ${ms?`<div class="tile-ms">🎊</div>`:''}
+      <div class="tile-count" style="color:${countColor}">${days===null?'?':days}</div>
+      <div class="tile-unit">day${days===1?'':'s'} since</div>
+      <div class="tile-name" style="color:${col?darken(col,.75):'var(--amber)'}"> ${item.name}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── TILE TAP / LONG-PRESS ──
+let pressTimer=null, pressedIdx=null, longPressFired=false, pressX=0, pressY=0;
+const LONG_PRESS_MS=300;
+const MOVE_SLOP=8; // pixels of movement allowed before cancelling long press
+
+document.addEventListener('pointerdown',e=>{
+  const tile=e.target.closest('.tile');
+  if(!tile)return;
+  pressedIdx=parseInt(tile.dataset.idx,10);
+  pressX=e.clientX; pressY=e.clientY;
+  longPressFired=false;
+  clearTimeout(pressTimer);
+  pressTimer=setTimeout(()=>{
+    longPressFired=true;
+    haptic('medium');
+    openCtxMenu(pressedIdx, pressX, pressY);
+  },LONG_PRESS_MS);
+},{passive:true});
+
+document.addEventListener('pointerup',e=>{
+  clearTimeout(pressTimer);
+  if(!longPressFired&&pressedIdx!==null){
+    e.stopPropagation();
+    openSheet(pressedIdx);
+  }
+  pressedIdx=null;
+  longPressFired=false;
+});
+
+document.addEventListener('pointermove',e=>{
+  if(pressedIdx===null)return;
+  const dx=e.clientX-pressX, dy=e.clientY-pressY;
+  if(Math.sqrt(dx*dx+dy*dy)>MOVE_SLOP){
+    clearTimeout(pressTimer);
+    pressedIdx=null;
+  }
+},{passive:true});
+
+document.addEventListener('pointercancel',()=>{
+  clearTimeout(pressTimer);
+  pressedIdx=null;
+  longPressFired=false;
+});
+
+// ── CONTEXT MENU ──
+let ctxIdx=null;
+function openCtxMenu(i, x, y){
+  ctxIdx=i;
+  const item=data.items[i];
+  document.getElementById('ctxTitle').textContent=item.name;
+  document.getElementById('ctxPinBtn').textContent=item.pinned?'📌 Unpin':'📌 Pin to top';
+  document.getElementById('ctxOverlay').classList.add('on');
+  // Position card near press point, clamped to viewport
+  const menu=document.getElementById('ctxMenu');
+  menu.style.visibility='hidden';
+  menu.style.left='0px'; menu.style.top='0px';
+  requestAnimationFrame(()=>{
+    const mw=menu.offsetWidth||200, mh=menu.offsetHeight||160;
+    const vw=window.innerWidth, vh=window.innerHeight;
+    const pad=12;
+    let left=x+8, top=y-mh/2;
+    if(left+mw>vw-pad) left=x-mw-8;
+    if(left<pad) left=pad;
+    if(top+mh>vh-pad) top=vh-mh-pad;
+    if(top<pad) top=pad;
+    menu.style.left=left+'px';
+    menu.style.top=top+'px';
+    menu.style.visibility='visible';
+  });
+}
+function closeCtxMenu(){
+  document.getElementById('ctxOverlay').classList.remove('on');
+  ctxIdx=null;
+}
+function ctxDidToday(){
+  if(ctxIdx===null)return;
+  const idx=ctxIdx;
+  closeCtxMenu();
+  data.items[idx]=addEntry(data.items[idx],today());
+  renderAll();pushGist();
+}
+function ctxTogglePin(){
+  if(ctxIdx===null)return;
+  const idx=ctxIdx;
+  closeCtxMenu();
+  data.items[idx].pinned=!data.items[idx].pinned;
+  renderAll();pushGist();
+}
+async function ctxDelete(){
+  if(ctxIdx===null)return;
+  const idx=ctxIdx; // capture before closeCtxMenu nulls it
+  const name=data.items[idx].name;
+  closeCtxMenu();
+  const ok=await showConfirm('Delete item',`Remove "${name}" and all its history? This cannot be undone.`);
+  if(!ok)return;
+  data.items.splice(idx,1);
+  renderAll();pushGist();
+}
+
+// ── SHEET ──
+let sheetIdx=null;
+let sheetOpenedAt=0;
+function openSheet(i){
+  sheetIdx=i;
+  renderSheet();
+  sheetOpenedAt=Date.now();
+  document.getElementById('sheetOverlay').classList.add('on');
+}
+function closeSheet(){
+  document.getElementById('sheetOverlay').classList.remove('on');
+  sheetIdx=null;
+}
+function closeSheetOnBg(e){
+  if(e.target!==document.getElementById('sheetOverlay'))return;
+  if(Date.now()-sheetOpenedAt<350)return; // ignore if just opened
+  closeSheet();
+}
+
+function renderSheet(){
+  if(sheetIdx===null)return;
+  const item=data.items[sheetIdx];
+  const days=daysSince(item.lastDate);
+  const avg=avgInterval(item.history);
+  const ms=milestone(days,item);
+  const lblObj=(data.labels||[]).find(l=>(l.name||l)===item.label);
+  const col=lblObj?.color||null;
+  const dc=darken(col||'#7A6A56');
+  const countColor=col?dc:(days===null||days>30?'var(--rose)':days>7?'var(--amber)':'var(--sage)');
+
+  document.getElementById('sheetCount').textContent=days===null?'?':days;
+  document.getElementById('sheetCount').style.color=countColor;
+  document.getElementById('sheetUnit').textContent=`day${days===1?'':'s'} since`;
+  document.getElementById('sheetName').textContent=item.name;
+  document.getElementById('sheetSub').innerHTML=
+    (item.lastDate?`Last: ${fmtDate(item.lastDate)}`:'Never logged')+
+    (avg!==null?` · avg every ${avg}d`:'');
+  const lblEl=document.getElementById('sheetLbl');
+  const lblBtn=document.getElementById('sheetLblEditBtn');
+  if(item.label&&col){
+    lblEl.innerHTML=`<span class="sheet-lbl" style="background:${colBg(col)};color:${dc};border:1.5px solid ${colBorder(col)};cursor:pointer" onclick="toggleLabelEdit()" title="Change label">${item.label}</span>`;
+    lblBtn.style.display='none';
+  } else if(item.label){
+    lblEl.innerHTML=`<span class="sheet-lbl" style="background:var(--surface2);color:var(--ts);cursor:pointer" onclick="toggleLabelEdit()" title="Change label">${item.label}</span>`;
+    lblBtn.style.display='none';
+  } else {
+    lblEl.innerHTML='';
+    lblBtn.style.display='';
+    lblBtn.textContent='Add label';
+    lblBtn.style.border='1px dashed var(--border)';
+    lblBtn.style.padding='3px 8px';
+  }
+
+  document.getElementById('sheetMs').innerHTML=ms?`<div class="sheet-ms">🎊 ${ms} milestone — amazing!</div>`:'';
+  document.getElementById('sheetDate').value=today();
+  document.getElementById('sheetDate').max=today();
+  updateEntryBtnLabel();
+  document.getElementById('sheetReminder').value=item.reminderAt||'';
+  updateReminderBtnState();
+  const notesEl=document.getElementById('sheetNotes');
+  notesEl.value=item.notes||'';
+  setTimeout(()=>autoResizeNotes(notesEl),0);
+
+  const hist=[...item.history].reverse();
+  document.getElementById('sheetHist').innerHTML=hist.length
+    ?hist.map(dk=>{
+        const isL=dk===item.lastDate;
+        return`<div class="hist-row"><span class="hist-date">${fmtDate(dk)}</span>${isL?'<span class="hist-tag">latest</span>':''}<button class="hist-x" onclick="sheetDelEntry('${dk}')">×</button></div>`;
+      }).join('')
+    :'<div class="hist-empty">No entries yet.</div>';
+}
+
+function toggleRename(){
+  const row=document.getElementById('sheetRenameRow');
+  const showing=row.style.display==='flex';
+  row.style.display=showing?'none':'flex';
+  if(!showing){
+    const inp=document.getElementById('sheetRenameInput');
+    inp.value=data.items[sheetIdx].name;
+    inp.focus();
+    // Place cursor at end, not select-all
+    const len=inp.value.length;
+    inp.setSelectionRange(len,len);
+  }
+}
+function saveRename(){
+  const val=document.getElementById('sheetRenameInput').value.trim();
+  if(!val||sheetIdx===null)return;
+  data.items[sheetIdx].name=val;
+  document.getElementById('sheetRenameRow').style.display='none';
+  renderAll();renderSheet();pushGist();
+}
+function toggleLabelEdit(){
+  const row=document.getElementById('sheetLblRow');
+  const showing=row.style.display==='flex';
+  row.style.display=showing?'none':'flex';
+  if(!showing){
+    // populate select with all labels + no label option
+    const sel=document.getElementById('sheetLblSel');
+    sel.innerHTML='<option value="">No label</option>';
+    (data.labels||[]).forEach(l=>{
+      const n=l.name||l;
+      sel.innerHTML+=`<option value="${n}">${n}</option>`;
+    });
+    sel.value=data.items[sheetIdx].label||'';
+  }
+}
+function saveLabelEdit(){
+  if(sheetIdx===null)return;
+  data.items[sheetIdx].label=document.getElementById('sheetLblSel').value;
+  document.getElementById('sheetLblRow').style.display='none';
+  renderAll();renderSheet();pushGist();
+}
+function autoResizeNotes(el){
+  el.style.height='0px'; // reset fully so scrollHeight reflects only actual content
+  el.style.height=Math.max(el.scrollHeight,34)+'px';
+}
+function saveNotes(){
+  if(sheetIdx===null)return;
+  const el=document.getElementById('sheetNotes');
+  autoResizeNotes(el);
+  data.items[sheetIdx].notes=el.value;
+  lsSet(DK,data);
+  clearTimeout(saveNotes._t);
+  saveNotes._t=setTimeout(()=>pushGist(),1500);
+}
+function updateReminderBtnState(){
+  const btn=document.getElementById('sheetReminderBtn');
+  if(!btn||sheetIdx===null)return;
+  const val=parseInt(document.getElementById('sheetReminder').value,10)||null;
+  const saved=data.items[sheetIdx].reminderAt||null;
+  const unchanged=val===saved;
+  btn.classList.toggle('faded',unchanged);
+  btn.textContent=unchanged?'Set':'Set';
+}
+function saveReminder(){
+  if(sheetIdx===null)return;
+  const val=parseInt(document.getElementById('sheetReminder').value,10);
+  data.items[sheetIdx].reminderAt=(val&&val>0)?val:null;
+  lsSet(DK,data);
+  renderAll();renderSheet();pushGist();
+}
+function updateEntryBtnLabel(){
+  const val=document.getElementById('sheetDate').value;
+  const btn=document.getElementById('sheetEntryBtn');
+  if(!btn)return;
+  btn.textContent=(val===today())?'✓ Did it today':'+ Add entry';
+}
+function sheetAddEntry(){
+  if(sheetIdx===null)return;
+  const val=document.getElementById('sheetDate').value;
+  if(!val)return;
+  data.items[sheetIdx]=addEntry(data.items[sheetIdx],val);
+  renderAll();renderSheet();pushGist();
+}
+function sheetDelEntry(dk){
+  if(sheetIdx===null)return;
+  data.items[sheetIdx]=delEntry(data.items[sheetIdx],dk);
+  renderAll();renderSheet();pushGist();
+}
+async function sheetDelete(){
+  if(sheetIdx===null)return;
+  const name=data.items[sheetIdx].name;
+  const ok=await showConfirm('Delete item',`Remove "${name}" and all its history? This cannot be undone.`);
+  if(!ok)return;
+  data.items.splice(sheetIdx,1);
+  closeSheet();renderAll();pushGist();
+}
+
+function setFilter(l){filter=l;renderAll()}
+
+// ── ADD MODAL ──
+let addSelectedLabel='';
+function openAddModal(){
+  addSelectedLabel=filter||''; // pre-select active filter
+  renderAddLabels();
+  document.getElementById('addName').value='';
+  document.getElementById('addOverlay').classList.add('on');
+  setTimeout(()=>document.getElementById('addName').focus(),120);
+}
+function closeAddModal(){
+  document.getElementById('addOverlay').classList.remove('on');
+}
+function closeAddOnBg(e){if(e.target===document.getElementById('addOverlay'))closeAddModal()}
+function renderAddLabels(){
+  const row=document.getElementById('addLabelRow');
+  let h=`<button class="add-lbl-chip${addSelectedLabel===''?' picked':''}" data-lbl="">No label</button>`;
+  (data.labels||[]).forEach(l=>{
+    const n=l.name||l, c=l.color||null;
+    const picked=addSelectedLabel===n;
+    // Picked: no inline style at all — CSS class handles everything
+    // Not picked: apply colour tint
+    const st=picked?'' : (c?`style="background:${colBg(c)};border-color:${colBorder(c)};color:${darken(c)}"` :'');
+    h+=`<button class="add-lbl-chip${picked?' picked':''}" ${st} data-lbl="${n.replace(/"/g,'&quot;')}">${n}</button>`;
+  });
+  h+=`<button class="add-lbl-chip" id="addNewLblBtn" style="border-style:dashed;color:var(--th)" data-lbl="__new__">+ New label</button>`;
+  row.innerHTML=h;
+  row.querySelectorAll('[data-lbl]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      if(btn.dataset.lbl==='__new__'){ showNewLabelInput(); return; }
+      addSelectedLabel=btn.dataset.lbl;
+      renderAddLabels();
+    });
+  });
+}
+function showNewLabelInput(){
+  document.getElementById('addNewLblRow').style.display='flex';
+  document.getElementById('addNewLblInput').value='';
+  document.getElementById('addNewLblInput').focus();
+}
+function cancelNewLabel(){
+  document.getElementById('addNewLblRow').style.display='none';
+}
+function confirmNewLabel(){
+  const inp=document.getElementById('addNewLblInput');
+  const n=inp.value.trim();
+  if(!n)return;
+  if(!(data.labels||[]).find(l=>(l.name||l)===n)){
+    data.labels.push({name:n,color:PALETTE[data.labels.length%PALETTE.length]});
+    lsSet(DK,data);
+  }
+  addSelectedLabel=n;
+  document.getElementById('addNewLblRow').style.display='none';
+  renderAddLabels();
+}
+function submitAdd(){
+  const name=document.getElementById('addName').value.trim();
+  if(!name)return;
+  data.items.push(norm({name,label:addSelectedLabel,lastDate:null,history:[]}));
+  closeAddModal();
+  renderAll();pushGist();
+}
+
+// ── ITEM ACTIONS ──
+function addItem(){} // kept for safety, replaced by submitAdd
+
+// ── LABELS ──
+function openLblModal(){renderLblList();document.getElementById('lblModal').classList.add('on')}
+function closeLblModal(){document.getElementById('lblModal').classList.remove('on');renderAll();pushGist()}
+function renderLblList(){
+  document.getElementById('lblList').innerHTML=(data.labels||[]).map((l,i)=>{
+    const n=l.name||l,c=l.color||PALETTE[i%PALETTE.length];
+    const sw=PALETTE.map(p=>`<div class="sw${p===c?' picked':''}" style="background:${p}" onclick="setLabelColor(${i},'${p}')"></div>`).join('');
+    return`<div class="lbl-item"><div class="lbl-item-top"><div class="lbl-swatch" style="background:${c}"></div><input type="text" value="${n}" onchange="renameLabel(${i},this.value)"/><button onclick="delLabel(${i})">✕</button></div><div class="swatches">${sw}</div></div>`;
+  }).join('');
+}
+function addLabel(){
+  const inp=document.getElementById('newLblTxt'),n=inp.value.trim();
+  if(!n||(data.labels||[]).find(l=>(l.name||l)===n))return;
+  data.labels.push({name:n,color:PALETTE[data.labels.length%PALETTE.length]});
+  inp.value='';lsSet(DK,data);renderLblList();
+}
+function setLabelColor(i,c){
+  if(typeof data.labels[i]==='string')data.labels[i]={name:data.labels[i],color:c};
+  else data.labels[i].color=c;
+  lsSet(DK,data);renderLblList();
+}
+function renameLabel(i,v){
+  const old=typeof data.labels[i]==='string'?data.labels[i]:data.labels[i].name;
+  if(typeof data.labels[i]==='string')data.labels[i]={name:v,color:PALETTE[i%PALETTE.length]};
+  else data.labels[i].name=v;
+  data.items.forEach(it=>{if(it.label===old)it.label=v});lsSet(DK,data);
+}
+async function delLabel(i){
+  const n=typeof data.labels[i]==='string'?data.labels[i]:data.labels[i].name;
+  const ok=await showConfirm('Delete label',`Delete "${n}"? Items with this label will become unlabelled.`);
+  if(!ok)return;
+  data.labels.splice(i,1);
+  data.items.forEach(it=>{if(it.label===n)it.label=''});
+  lsSet(DK,data);renderLblList();
+}
+
+// ── NOTIFICATIONS ──
+function checkNotifBar(){
+  if(typeof Notification!=='undefined'&&Notification.permission==='default')
+    document.getElementById('notifStrip').classList.remove('off');
+}
+function askNotif(){
+  Notification.requestPermission().then(p=>{if(p==='granted'){document.getElementById('notifStrip').classList.add('off');checkMilestones()}});
+}
+function checkMilestones(){
+  if(typeof Notification==='undefined'||Notification.permission!=='granted')return;
+  const nf=lsGet(NK)||{};let ch=false;
+  (data.items||[]).forEach(item=>{
+    const d=daysSince(item.lastDate),ms=milestone(d,item);if(!ms)return;
+    const k=item.name+':'+d;
+    if(!nf[k]){new Notification('Days Since',{body:`It's been ${ms} since "${item.name}"!`});nf[k]=true;ch=true;}
+  });
+  if(ch)lsSet(NK,nf);
+}
+
+// ── KEYBOARD ──
+document.addEventListener('keydown',e=>{
+  if(document.getElementById('loginScreen').classList.contains('active')){
+    if(e.key>='0'&&e.key<='9')pk(e.key);
+    else if(e.key==='Backspace')pk('⌫');
+    else if(e.key==='Enter')pk('✓');
+  }
+  if(document.getElementById('addOverlay').classList.contains('on')&&e.key==='Enter') submitAdd();
+  if(e.key==='Escape') closeAddModal();
+});
+
+// ── HAPTICS ──
+// Uses Vibration API (Android Chrome) — iOS ignores vibrate but we try anyway
+function haptic(type='light'){
+  if(!navigator.vibrate) return;
+  const patterns={light:10, medium:20, heavy:40, success:[10,30,10], error:[20,40,20]};
+  navigator.vibrate(patterns[type]||patterns.light);
+}
+// Wire haptic to every button tap globally
+document.addEventListener('pointerdown', e=>{
+  const btn=e.target.closest('button');
+  if(!btn) return;
+  // heavier haptic for destructive actions
+  if(btn.classList.contains('btn-del')||btn.id==='confirmDelete') haptic('heavy');
+  else if(btn.classList.contains('btn-today')||btn.classList.contains('btn-cta')||btn.classList.contains('add-modal-submit')||btn.classList.contains('greet-continue')) haptic('medium');
+  else haptic('light');
+}, {passive:true});
+
+// ── VOICE + NLP PIPELINE ──
+const PROXY_URL = 'https://days-since-proxy.abbiraam2001.workers.dev';
+let HF_TOKEN = '';
+
+function loadSecrets(){
+  HF_TOKEN = localStorage.getItem('dsc_hf_token') || '';
+}
+
+async function callHFClassifier(text){
+  const res = await fetch(PROXY_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ inputs: text })
+  });
+  if(!res.ok) throw new Error(`HTTP ${res.status}`);
+  const json = await res.json();
+  console.log('Classifier response:', json);
+  return json;
+}
+
+let recognition = null;
+let voiceParsed  = null; // { intent, activity, days_ago }
+
+function openVoiceModal(){
+  voiceParsed = null;
+  document.getElementById('voiceStatus').textContent = 'Tap the mic or type below';
+  document.getElementById('voiceTranscript').textContent = '';
+  document.getElementById('voiceResult').classList.remove('show');
+  document.getElementById('voiceResult').textContent = '';
+  document.getElementById('voiceConfirm').classList.remove('show');
+  document.getElementById('voiceMicBtn').classList.remove('listening');
+  document.getElementById('voiceTextInput').value = '';
+  document.getElementById('voiceOverlay').classList.add('on');
+}
+function submitVoiceText(){
+  const val = document.getElementById('voiceTextInput').value.trim();
+  if(!val) return;
+  document.getElementById('voiceTranscript').textContent = `"${val}"`;
+  document.getElementById('voiceTextInput').value = '';
+  processVoice(val);
+}
+function closeVoiceModal(){
+  if(recognition) try{ recognition.stop(); }catch(e){}
+  document.getElementById('voiceOverlay').classList.remove('on');
+  document.getElementById('voiceMicBtn').classList.remove('listening');
+}
+
+function toggleListening(){
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SpeechRec){
+    document.getElementById('voiceStatus').textContent = 'Voice not supported in this browser. Try Chrome.';
+    return;
+  }
+  if(recognition){
+    try{ recognition.stop(); }catch(e){}
+    recognition = null;
+    document.getElementById('voiceMicBtn').classList.remove('listening');
+    document.getElementById('voiceStatus').textContent = 'Tap the mic and speak';
+    return;
+  }
+  recognition = new SpeechRec();
+  recognition.lang = 'en-US';
+  recognition.interimResults = true;
+  recognition.maxAlternatives = 1;
+
+  document.getElementById('voiceMicBtn').classList.add('listening');
+  document.getElementById('voiceStatus').textContent = 'Listening…';
+  document.getElementById('voiceTranscript').textContent = '';
+  document.getElementById('voiceResult').classList.remove('show');
+  document.getElementById('voiceConfirm').classList.remove('show');
+
+  recognition.onresult = e => {
+    const transcript = Array.from(e.results).map(r => r[0].transcript).join('');
+    document.getElementById('voiceTranscript').textContent = `"${transcript}"`;
+    if(e.results[e.results.length-1].isFinal){
+      recognition = null;
+      document.getElementById('voiceMicBtn').classList.remove('listening');
+      document.getElementById('voiceStatus').textContent = 'Processing…';
+      processVoice(transcript);
+    }
+  };
+  recognition.onerror = e => {
+    recognition = null;
+    document.getElementById('voiceMicBtn').classList.remove('listening');
+    document.getElementById('voiceStatus').textContent = `Error: ${e.error}. Try again.`;
+  };
+  recognition.onend = () => {
+    recognition = null;
+    document.getElementById('voiceMicBtn').classList.remove('listening');
+  };
+  recognition.start();
+}
+
+async function processVoice(text){
+  try{
+    document.getElementById('voiceStatus').textContent = 'Processing…';
+    let json;
+    try{
+      json = await callHFClassifier(text);
+    } catch(e){
+      console.error('Classifier error:', e);
+      document.getElementById('voiceStatus').textContent = 'Could not run model. Try again.';
+      return;
+    }
+
+    // HF returns array of arrays — take top result
+    const top = Array.isArray(json[0]) ? json[0][0] : json[0];
+    const intent = top.label;
+    const score  = (top.score * 100).toFixed(0);
+
+    if(intent === 'unclear' || top.score < 0.5){
+      document.getElementById('voiceStatus').textContent = `Not sure what you mean (${score}% confidence). Try again.`;
+      return;
+    }
+
+    // 2. Extract entities (JS port of Python rules)
+    const entities = extractEntities(text);
+    voiceParsed = { intent, ...entities };
+
+    // 3. Show result
+    let msg = '';
+    if(intent === 'log_entry'){
+      const dayStr = entities.days_ago === 0 ? 'today' :
+                     entities.days_ago === 1 ? 'yesterday' :
+                     `${entities.days_ago} days ago`;
+      msg = `📋 Log "${entities.activity}" — ${dayStr}`;
+    } else if(intent === 'new_activity'){
+      msg = `➕ Create new activity "${entities.activity}"`;
+    } else if(intent === 'assign_label'){
+      msg = `🏷 Label "${entities.activity}" as "${entities.label}"`;
+    }
+
+    document.getElementById('voiceStatus').textContent = `${score}% confident`;
+    document.getElementById('voiceResult').textContent = msg;
+    document.getElementById('voiceResult').classList.add('show');
+    document.getElementById('voiceConfirm').classList.add('show');
+    haptic('success');
+
+  } catch(e){
+    console.error(e);
+    document.getElementById('voiceStatus').textContent = 'Could not reach the model. Check connection.';
+  }
+}
+
+function extractEntities(text){
+  const t = text.toLowerCase();
+
+  // days_ago extraction
+  const daysAgoMatch = t.match(/(\d+)\s+days?\s+(ago|back)/);
+  const weeksMatch   = t.match(/(\d+)\s+weeks?\s+ago/);
+  let days_ago = 0;
+  if(/\btoday\b|\bthis morning\b|\bthis evening\b/.test(t))       days_ago = 0;
+  else if(/\byesterday\b|\blast night\b/.test(t))                  days_ago = 1;
+  else if(daysAgoMatch)                                            days_ago = parseInt(daysAgoMatch[1]);
+  else if(weeksMatch)                                              days_ago = parseInt(weeksMatch[1]) * 7;
+  else if(/\blast week\b|\ba week ago\b/.test(t))                  days_ago = 7;
+  else if(/\blast month\b|\ba month ago\b/.test(t))                days_ago = 30;
+
+  // activity extraction — strip verbs, time words, prepositions
+  const STRIP = [
+    /\b(i\s+)?(did|played|went|had|finished|practiced|visited|called|cooked|bought|read|watched|biked|ran|hiked|swam|logged|attended|completed|took|made|cleaned|studied|wrote|spent|hit)\b/gi,
+    /\b(today|yesterday|this\s+morning|this\s+evening|this\s+afternoon|last\s+night)\b/gi,
+    /\b\d+\s+days?\s+(ago|back)\b/gi,
+    /\b\d+\s+weeks?\s+ago\b/gi,
+    /\b(a\s+week|last\s+week|a\s+month|last\s+month)\s*(ago)?\b/gi,
+    /\b(last\s+)?(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/gi,
+    /\b(for|an|a)\s+(hour|while|bit|session|few\s+hours?|couple\s+of)\b/gi,
+    /\b(this\s+)?(morning|evening|afternoon)\b/gi,
+    /\bwith\b.*/gi,
+    /\bjust\b|\bsome\b|\bmy\b|\bto\b|\bthe\b|\ba\b|\ban\b/gi,
+  ];
+  let activity = text;
+  STRIP.forEach(p => { activity = activity.replace(p, ' '); });
+  activity = activity.replace(/\s+/g, ' ').trim().replace(/^[,.\s]+|[,.\s]+$/g, '');
+  activity = activity.split(' ').map(w => w.charAt(0).toUpperCase()+w.slice(1)).join(' ');
+  if(!activity) activity = 'Unknown';
+
+  // label extraction for assign_label
+  const labelMatch = text.match(/(?:under|as|label|is|part of|in|tagged?(?:\s+as)?)\s+([a-zA-Z]+)\s*$/i);
+  const label = labelMatch ? labelMatch[1] : null;
+
+  return { activity, days_ago, label };
+}
+
+function confirmVoiceLog(){
+  if(!voiceParsed) return;
+  const { intent, activity, days_ago, label } = voiceParsed;
+
+  if(intent === 'log_entry'){
+    // Find best matching existing item
+    const match = data.items.find(it =>
+      it.name.toLowerCase() === activity.toLowerCase() ||
+      it.name.toLowerCase().includes(activity.toLowerCase()) ||
+      activity.toLowerCase().includes(it.name.toLowerCase())
+    );
+    if(match){
+      const dk = (() => {
+        const d = new Date(); d.setDate(d.getDate() - days_ago);
+        return localDate(d);
+      })();
+      data.items[data.items.indexOf(match)] = addEntry(match, dk);
+      lsSet(DK, data); renderAll(); pushGist();
+      closeVoiceModal();
+      haptic('success');
+    } else {
+      // Create new item and log it
+      const dk = (() => {
+        const d = new Date(); d.setDate(d.getDate() - days_ago);
+        return localDate(d);
+      })();
+      const newItem = norm({ name: activity, label: '', lastDate: null, history: [] });
+      newItem.history = [dk]; newItem.lastDate = dk;
+      data.items.push(newItem);
+      lsSet(DK, data); renderAll(); pushGist();
+      closeVoiceModal();
+      haptic('success');
+    }
+  } else if(intent === 'new_activity'){
+    data.items.push(norm({ name: activity, label: '', lastDate: null, history: [] }));
+    lsSet(DK, data); renderAll(); pushGist();
+    closeVoiceModal();
+  } else if(intent === 'assign_label' && label){
+    const match = data.items.find(it => it.name.toLowerCase().includes(activity.toLowerCase()));
+    if(match){ match.label = label; lsSet(DK, data); renderAll(); pushGist(); }
+    closeVoiceModal();
+  }
+}
+function getQuoteDuration(){ return(parseInt(localStorage.getItem('dsc_quote_dur'),10)||8)*1000; }
+function updateQuoteDur(v){ document.getElementById('quoteDurLabel').textContent=v+' seconds'; }
+function saveQuoteDur(v){ localStorage.setItem('dsc_quote_dur',v); updateQuoteDur(v); }
+function getSortSetting(){
+  const v=localStorage.getItem('dsc_sort_asc');
+  return v===null?true:v==='1';
+}
+function setSortSetting(on){
+  localStorage.setItem('dsc_sort_asc',on?'1':'0');
+}
+function toggleSortSetting(){
+  setSortSetting(document.getElementById('sortToggle').checked);
+  renderAll();
+}
+
+// ── EXPORT / IMPORT ──
+function exportData(){
+  const exportObj={
+    exportedAt:new Date().toISOString(),
+    app:'Days Since',
+    version:1,
+    items:data.items.map(it=>({
+      name:it.name,
+      label:it.label||'',
+      history:it.history||[],
+      lastDate:it.lastDate||null,
+      notes:it.notes||''
+    })),
+    labels:data.labels
+  };
+  const blob=new Blob([JSON.stringify(exportObj,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const dateStr=today();
+  a.href=url;
+  a.download=`days-since-backup-${dateStr}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+async function importData(event){
+  const file=event.target.files[0];
+  if(!file)return;
+  try{
+    const text=await file.text();
+    const parsed=JSON.parse(text);
+    if(!parsed.items||!Array.isArray(parsed.items)){
+      alert('This file doesn\'t look like a valid Days Since export.');
+      return;
+    }
+    const mode=await showConfirm(
+      'Import data',
+      `This file has ${parsed.items.length} item(s) and was exported on ${parsed.exportedAt?new Date(parsed.exportedAt).toLocaleDateString():'an unknown date'}. This will REPLACE all your current data. Continue?`
+    );
+    if(!mode)return;
+    data.items=parsed.items.map(it=>norm({
+      name:it.name,
+      label:it.label||'',
+      history:it.history||[],
+      lastDate:it.lastDate||null,
+      notes:it.notes||''
+    }));
+    if(parsed.labels) data.labels=normLabels(parsed.labels);
+    lsSet(DK,data);
+    renderAll();
+    closeSettings();
+    pushGist();
+  }catch(e){
+    alert('Could not read that file. Make sure it\'s a valid Days Since export.');
+    console.error(e);
+  }
+  event.target.value=''; // reset so re-importing the same file works
+}
+function applyTheme(dark){
+  document.documentElement.setAttribute('data-theme',dark?'dark':'light');
+  const meta=document.getElementById('themeColorMeta');
+  if(meta) meta.setAttribute('content',dark?'#141210':'#FBF7F0');
+  // Update apple status bar style
+  const apple=document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+  if(apple) apple.setAttribute('content',dark?'black':'default');
+}
+function copyUPI(btn){
+  const upi='makemehappynow@axl';
+  const done=()=>{
+    const orig='makemehappynow@axl';
+    btn.textContent='UPI-ID copied! (:';
+    setTimeout(()=>btn.textContent=orig,1800);
+  };
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(upi).then(done).catch(()=>fallbackCopy(upi,done));
+  } else {
+    fallbackCopy(upi,done);
+  }
+}
+function fallbackCopy(text,cb){
+  const ta=document.createElement('textarea');
+  ta.value=text;
+  ta.style.position='fixed';ta.style.opacity='0';
+  document.body.appendChild(ta);
+  ta.focus();ta.select();
+  try{ document.execCommand('copy'); cb&&cb(); }catch(e){ console.error('Copy failed',e); }
+  document.body.removeChild(ta);
+}
+function syncSettingToggles(){
+  const dtEl=document.getElementById('darkToggle');
+  const stEl=document.getElementById('sortToggle');
+  if(dtEl) dtEl.checked=localStorage.getItem('dsc_theme')==='dark';
+  if(stEl) stEl.checked=getSortSetting();
+}
+function toggleDarkMode(){
+  const dark=document.getElementById('darkToggle').checked;
+  localStorage.setItem('dsc_theme',dark?'dark':'light');
+  sessionStorage.setItem('dsc_skip_greet','1');
+  location.reload();
+}
+function initTheme(){
+  const saved=localStorage.getItem('dsc_theme');
+  const dark=saved?saved==='dark':window.matchMedia('(prefers-color-scheme:dark)').matches;
+  applyTheme(dark);
+}
+
+boot();
+</script>
+<!-- ONNX Runtime Web -->
+<div class="add-overlay" id="confirmOverlay">
+  <div class="add-modal" style="max-width:340px">
+    <div class="add-modal-title" id="confirmTitle">Are you sure?</div>
+    <p id="confirmMsg" style="font-size:14px;color:var(--ts);margin-bottom:1.5rem;line-height:1.6"></p>
+    <div class="add-modal-actions">
+      <button class="add-modal-cancel" onclick="resolveConfirm(false)">Cancel</button>
+      <button class="btn-del" onclick="resolveConfirm(true)">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// patch into existing script — custom confirm
+let _confirmResolve=null;
+function showConfirm(title,msg){
+  return new Promise(res=>{
+    _confirmResolve=res;
+    document.getElementById('confirmTitle').textContent=title;
+    document.getElementById('confirmMsg').textContent=msg;
+    document.getElementById('confirmOverlay').classList.add('on');
+  });
+}
+function resolveConfirm(val){
+  document.getElementById('confirmOverlay').classList.remove('on');
+  if(_confirmResolve){_confirmResolve(val);_confirmResolve=null;}
+}
+</script>
