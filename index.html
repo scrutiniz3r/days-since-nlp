@@ -9,6 +9,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
 <meta name="apple-mobile-web-app-title" content="Days Since"/>
+<link rel="apple-touch-icon" href="icon-192.png"/>
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"/>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <!-- Firebase (compat build — simplest for a single-file app, no bundler needed) -->
@@ -19,13 +21,12 @@
 // ── FIREBASE CONFIG ──
 // Get this from: Firebase Console → Project Settings → General → Your apps → Web app → SDK setup and config
 const firebaseConfig = {
-  apiKey: "AIzaSyA26Du1Mvl19OQbLgPr7NXSNtb2m0BGO8Y",
-  authDomain: "days-since-d4060.firebaseapp.com",
-  projectId: "days-since-d4060",
-  storageBucket: "days-since-d4060.firebasestorage.app",
-  messagingSenderId: "244970645148",
-  appId: "1:244970645148:web:071da48715b47dfe1eef59",
-  measurementId: "G-BEKBHTWHTK"
+  apiKey: "PASTE_YOUR_API_KEY",
+  authDomain: "PASTE_YOUR_PROJECT.firebaseapp.com",
+  projectId: "PASTE_YOUR_PROJECT_ID",
+  storageBucket: "PASTE_YOUR_PROJECT.appspot.com",
+  messagingSenderId: "PASTE_YOUR_SENDER_ID",
+  appId: "PASTE_YOUR_APP_ID"
 };
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
@@ -259,7 +260,8 @@ button{transition:transform .15s,box-shadow .15s,opacity .15s,background .15s,co
 .tile{background:var(--surface);border-radius:16px;box-shadow:var(--shadow);border:1.5px solid transparent;padding:1rem 1rem .85rem;cursor:pointer;user-select:none;transition:border-color .2s,box-shadow .2s,transform .15s;display:flex;flex-direction:column;gap:4px;min-height:110px;position:relative;overflow:hidden}
 .tile:hover{box-shadow:var(--shadow-lg);border-color:var(--border);transform:translateY(-1px)}
 .tile:active{transform:scale(.97)}
-.tile.milestone{border-color:var(--sage)}
+.tile.milestone{box-shadow:var(--shadow),0 0 16px 2px rgba(90,138,86,.35)}
+[data-theme="dark"] .tile.milestone{box-shadow:var(--shadow),0 0 16px 2px rgba(136,200,120,.3)}
 .tile.reminder-hit{animation:reminderGlow 2.2s ease-in-out infinite}
 @keyframes reminderGlow{
   0%,100%{box-shadow:var(--shadow),0 0 0 0 rgba(196,120,58,0)}
@@ -407,6 +409,15 @@ button{transition:transform .15s,box-shadow .15s,opacity .15s,background .15s,co
 </style>
 </head>
 <body>
+
+<!-- ── SPLASH — visible immediately on load, before Firebase resolves auth state.
+     Avoids a flash of the wrong screen (which reads as stutter/jank on Android)
+     while we wait to find out whether you're logged in. ── -->
+<div id="splashScreen" class="screen active">
+  <div class="setup-wrap">
+    <div class="setup-logo" style="opacity:.7">Days <em>since</em></div>
+  </div>
+</div>
 
 <!-- ── AUTH (Firebase Sign In / Sign Up) ── -->
 <div id="setupScreen" class="screen">
@@ -991,6 +1002,7 @@ function boot(){
       renderAll();checkNotifBar();
       syncSettingToggles();
       loadSecrets();
+      maybeShowDailyNudge();
     }
   });
 }
@@ -1002,6 +1014,7 @@ function finishOnboarding(){
   renderAll();checkNotifBar();
   syncSettingToggles();
   loadSecrets();
+  maybeShowDailyNudge();
 }
 
 // ── FIRESTORE DATA LAYER ──
@@ -1173,7 +1186,7 @@ function checkPin(){
   if(pin.length<4){document.getElementById('pinErr').textContent='Enter all 4 digits';return}
   if(hash(pin)!==userSettings.pinHash){document.getElementById('pinErr').textContent='Wrong PIN. Try again.';pin='';dots();return}
   pin='';dots();
-  buildGreeting();renderAll();checkNotifBar();syncSettingToggles();loadSecrets();
+  buildGreeting();renderAll();checkNotifBar();syncSettingToggles();loadSecrets();maybeShowDailyNudge();
 }
 function lockApp(){
   if(!userSettings.pinHash){closeSettings();return}
@@ -1735,7 +1748,22 @@ function checkNotifBar(){
     document.getElementById('notifStrip').classList.remove('off');
 }
 function askNotif(){
-  Notification.requestPermission().then(p=>{if(p==='granted'){document.getElementById('notifStrip').classList.add('off');checkMilestones()}});
+  Notification.requestPermission().then(p=>{if(p==='granted'){document.getElementById('notifStrip').classList.add('off');checkMilestones();maybeShowDailyNudge()}});
+}
+// Android Chrome throws if you call `new Notification(...)` directly from
+// page script — notifications there MUST go through a service worker's
+// showNotification(). This helper does that (with a same-page fallback for
+// browsers where a service worker isn't available, e.g. some desktop cases).
+async function showAppNotification(title,options){
+  if(typeof Notification==='undefined'||Notification.permission!=='granted')return;
+  try{
+    if('serviceWorker' in navigator){
+      const reg=await navigator.serviceWorker.ready;
+      await reg.showNotification(title,options);
+      return;
+    }
+  }catch(e){ console.log('showNotification via SW failed, falling back:',e); }
+  try{ new Notification(title,options); }catch(e){ console.log('Notification fallback failed:',e); }
 }
 function checkMilestones(){
   if(typeof Notification==='undefined'||Notification.permission!=='granted')return;
@@ -1743,9 +1771,31 @@ function checkMilestones(){
   (data.items||[]).forEach(item=>{
     const d=daysSince(item.lastDate),ms=milestone(d,item);if(!ms)return;
     const k=item.name+':'+d;
-    if(!nf[k]){new Notification('Days Since',{body:`It's been ${ms} since "${item.name}"!`});nf[k]=true;ch=true;}
+    if(!nf[k]){showAppNotification('Days Since',{body:`It's been ${ms} since "${item.name}"!`,icon:'icon-192.png',badge:'icon-192.png'});nf[k]=true;ch=true;}
   });
   if(ch)lsSet(NK,nf);
+}
+
+// ── DAILY NUDGE ──
+// Best-effort reminder to log something, shown once per day when the app is
+// actually opened. Honest limitation: this is not a true background push —
+// browsers don't let a static site wake up and notify while fully closed
+// without a server sending real Push messages (e.g. Firebase Cloud Messaging
+// + a scheduled Cloud Function). This version fires the moment you open the
+// app on a day you haven't been nudged yet, which covers the common case of
+// opening the app at some point most days.
+function maybeShowDailyNudge(){
+  if(typeof Notification==='undefined'||Notification.permission!=='granted')return;
+  const last=userSettings.lastDailyNudge;
+  const t=today();
+  if(last===t)return; // already nudged today
+  userSettings.lastDailyNudge=t;
+  saveSettingsDoc();
+  showAppNotification('Days Since',{
+    body:'Log something you did today — even the little things count (:',
+    icon:'icon-192.png',
+    badge:'icon-192.png'
+  });
 }
 
 // ── KEYBOARD ──
@@ -2127,6 +2177,15 @@ function initTheme(){
 }
 
 boot();
+
+// ── SERVICE WORKER — required for Chrome's automatic install prompt ──
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg=>console.log('Service worker registered:',reg.scope))
+      .catch(err=>console.log('Service worker registration failed:',err));
+  });
+}
 </script>
 <!-- ONNX Runtime Web -->
 <div class="add-overlay" id="confirmOverlay">
