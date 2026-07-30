@@ -1,13 +1,14 @@
 // Minimal service worker — required by Chrome/Android for the automatic
 // "Install app" prompt to fire. Also gives basic offline capability by
 // caching the app shell.
-const CACHE_NAME = 'days-since-v1';
+const CACHE_NAME = 'days-since-v2';
 const APP_SHELL = [
   './',
   './index.html',
   './manifest.json',
   './icon-192.png',
-  './icon-512.png'
+  './icon-512.png',
+  './badge-192.png'
 ];
 
 self.addEventListener('install', event => {
