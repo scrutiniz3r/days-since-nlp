@@ -257,6 +257,8 @@ button{transition:transform .15s,box-shadow .15s,opacity .15s,background .15s,co
 [data-theme="dark"] .chip.on{box-shadow:0 0 10px 2px rgba(240,234,224,.12)}
 .chip.mgmt{color:var(--th);border-style:dashed;background:transparent}
 .chip.mgmt:hover{color:var(--ts)}
+[data-theme="dark"] .chip.mgmt{color:var(--ts);border-color:var(--border)}
+[data-theme="dark"] .chip.mgmt:hover{color:var(--amber);border-color:var(--amber)}
 
 /* ── TILE GRID ── */
 .items{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px}
@@ -816,6 +818,11 @@ function defData(){return{items:[],labels:[
   {name:'Health',color:'#F4A8B8'},
   {name:'Bike',color:'#A8C5DA'},
 ]}}
+function nextLabelColor(){
+  const used=new Set((data.labels||[]).map(l=>(l.color||'').toUpperCase()));
+  const free=PALETTE.find(c=>!used.has(c.toUpperCase()));
+  return free||PALETTE[data.labels.length%PALETTE.length]; // fall back once every colour is taken
+}
 function normLabels(l){return(l||[]).map((x,i)=>typeof x==='string'?{name:x,color:PALETTE[i%PALETTE.length]}:x)}
 function hash(s){let h=0;for(let i=0;i<s.length;i++)h=(Math.imul(31,h)+s.charCodeAt(i))|0;return h.toString(36)}
 
@@ -1629,7 +1636,7 @@ function confirmNewLabel(){
   const n=inp.value.trim();
   if(!n)return;
   if(!(data.labels||[]).find(l=>(l.name||l)===n)){
-    data.labels.push({name:n,color:PALETTE[data.labels.length%PALETTE.length]});
+    data.labels.push({name:n,color:nextLabelColor()});
     lsSet(DK,data);
   }
   addSelectedLabel=n;
@@ -1660,7 +1667,7 @@ function renderLblList(){
 function addLabel(){
   const inp=document.getElementById('newLblTxt'),n=inp.value.trim();
   if(!n||(data.labels||[]).find(l=>(l.name||l)===n))return;
-  data.labels.push({name:n,color:PALETTE[data.labels.length%PALETTE.length]});
+  data.labels.push({name:n,color:nextLabelColor()});
   inp.value='';lsSet(DK,data);renderLblList();
 }
 function setLabelColor(i,c){
