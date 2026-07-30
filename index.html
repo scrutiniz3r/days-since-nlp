@@ -42,7 +42,7 @@ dbFs.enablePersistence({synchronizeTabs:true}).catch(err=>console.log('Persisten
   document.documentElement.setAttribute('data-theme',dark?'dark':'light');
   document.addEventListener('DOMContentLoaded',function(){
     const meta=document.getElementById('themeColorMeta');
-    if(meta) meta.setAttribute('content',dark?'#141210':'#FBF7F0');
+    if(meta) meta.setAttribute('content',dark?'#161210':'#FBF7F0');
   });
 })();
 </script>
@@ -72,23 +72,24 @@ dbFs.enablePersistence({synchronizeTabs:true}).catch(err=>console.log('Persisten
 }
 
 [data-theme="dark"]{
-  --bg:#141210;
-  --surface:#1F1C18;
-  --surface2:#2A2620;
-  --border:#3A342C;
-  --border2:#302A22;
-  --tp:#F0EAE0;
-  --ts:#A09080;
-  --th:#706050;
-  --rose:#F08878;
-  --rose-bg:#3A1810;
-  --amber:#F0A840;
-  --amber-bg:#382210;
-  --sage:#88C878;
-  --sage-bg:#182818;
-  --shadow:0 2px 12px rgba(0,0,0,.4);
-  --shadow-lg:0 8px 32px rgba(0,0,0,.6);
+  --bg:#161210;
+  --surface:#251F19;
+  --surface2:#2F2820;
+  --border:#453A2C;
+  --border2:#362C21;
+  --tp:#F5EDE2;
+  --ts:#B3A28C;
+  --th:#7C6B54;
+  --rose:#F2937F;
+  --rose-bg:#3D1C13;
+  --amber:#F5A94D;
+  --amber-bg:#3D2712;
+  --sage:#8FCB80;
+  --sage-bg:#1A2B18;
+  --shadow:0 2px 14px rgba(0,0,0,.45);
+  --shadow-lg:0 10px 36px rgba(0,0,0,.65);
 }
+[data-theme="dark"] .tile{border-color:var(--border)}
 body{font-family:var(--sans);background:var(--bg);color:var(--tp);min-height:100vh;-webkit-font-smoothing:antialiased}
 .screen{display:none;min-height:100vh;background:var(--bg)}
 .screen.active{display:flex;flex-direction:column}
@@ -238,6 +239,8 @@ button{transition:transform .15s,box-shadow .15s,opacity .15s,background .15s,co
 .add-lbl-chip{padding:5px 12px;font-size:12px;font-weight:500;border:1.5px solid var(--border);border-radius:var(--pill);background:var(--surface);color:var(--ts);cursor:pointer;transition:all .15s;white-space:nowrap}
 .add-lbl-chip.picked{background:#2C2016 !important;color:#FBF7F0 !important;border-color:#2C2016 !important;font-weight:600}
 [data-theme="dark"] .add-lbl-chip.picked{background:#F0EAE0 !important;color:#141210 !important;border-color:#F0EAE0 !important}
+.sheet-lbl-plus{width:30px;padding:5px 0 !important;text-align:center;font-weight:700;font-size:14px !important;border-style:dashed !important;color:var(--amber) !important;background:transparent !important}
+.sheet-lbl-plus:hover{background:var(--amber-bg) !important}
 .add-modal-actions{display:flex;gap:8px;justify-content:flex-end}
 .add-modal-cancel{padding:10px 16px;font-size:14px;font-weight:500;border:1.5px solid var(--border);border-radius:12px;background:transparent;color:var(--ts);cursor:pointer;font-family:var(--sans)}
 .add-modal-cancel:hover{border-color:var(--ts);color:var(--tp);transform:translateY(-1px);box-shadow:var(--shadow)}
@@ -367,7 +370,7 @@ button{transition:transform .15s,box-shadow .15s,opacity .15s,background .15s,co
 .pin-save-btn{padding:9px 16px;font-size:13px;font-weight:600;background:var(--amber);color:#fff;border:none;border-radius:12px;cursor:pointer;align-self:flex-start}
 
 /* MODAL */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(44,32,22,.4);z-index:50;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(3px)}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(44,32,22,.4);z-index:62;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(3px)}
 .modal-overlay.on{display:flex}
 .modal{background:var(--surface);border-radius:24px;padding:1.5rem;width:100%;max-width:360px;box-shadow:var(--shadow-lg)}
 .modal h2{font-family:var(--serif);font-size:20px;font-weight:300;margin-bottom:1rem}
@@ -631,7 +634,7 @@ button{transition:transform .15s,box-shadow .15s,opacity .15s,background .15s,co
       <button class="pin-save-btn" onclick="savePinChange()">Save PIN</button>
     </div>
 
-    <div class="setting-row">
+    <div class="setting-row" id="lockNowRow">
       <div class="setting-info">
         <strong>Lock now</strong>
         <small>Return to the PIN screen</small>
@@ -650,7 +653,7 @@ button{transition:transform .15s,box-shadow .15s,opacity .15s,background .15s,co
     <div class="setting-row">
       <div class="setting-info">
         <strong>Buy me a chaya ☕</strong>
-        <small>and a hot paruppu vada on a rainy evening</small>
+        <small>and a hot paruppu vada!</small>
       </div>
       <button class="tb-btn" onclick="copyUPI(this)">makemehappynow@axl</button>
     </div>
@@ -681,14 +684,6 @@ button{transition:transform .15s,box-shadow .15s,opacity .15s,background .15s,co
 
     <div class="setting-row">
       <div class="setting-info">
-        <strong>Import from old Gist</strong>
-        <small>One-time migration if you used the GitHub Gist version before</small>
-      </div>
-      <button class="tb-btn" onclick="openGistImport()">↑ Import</button>
-    </div>
-
-    <div class="setting-row">
-      <div class="setting-info">
         <strong>Export data</strong>
         <small>Download all your data as a JSON file</small>
       </div>
@@ -710,27 +705,6 @@ button{transition:transform .15s,box-shadow .15s,opacity .15s,background .15s,co
         <small>Permanently deletes your account and all data</small>
       </div>
       <button class="tb-btn" style="color:var(--rose);border-color:var(--rose)" onclick="deleteAccount()">Delete</button>
-    </div>
-  </div>
-</div>
-
-<!-- ── GIST IMPORT MODAL (migration for old users) ── -->
-<div class="add-overlay" id="gistImportOverlay">
-  <div class="add-modal" style="max-width:400px">
-    <div class="add-modal-title">Import from <em>old Gist</em></div>
-    <p style="font-size:13px;color:var(--ts);margin-bottom:1.25rem;line-height:1.6">If you used the GitHub Gist version of this app before, paste your old Gist ID and token below to pull your data in. This won't overwrite anything already here — it merges.</p>
-    <div class="field">
-      <label>GitHub Gist ID</label>
-      <input type="text" id="importGistId" class="add-modal-input" placeholder="e.g. 4b2d8f3e1a9c0765"/>
-    </div>
-    <div class="field">
-      <label>GitHub Token</label>
-      <input type="password" id="importGistToken" class="add-modal-input" placeholder="ghp_…"/>
-    </div>
-    <div class="err" id="gistImportErr"></div>
-    <div class="add-modal-actions">
-      <button class="add-modal-cancel" onclick="closeGistImport()">Cancel</button>
-      <button class="add-modal-submit" onclick="doGistImport()">Import →</button>
     </div>
   </div>
 </div>
@@ -759,10 +733,8 @@ button{transition:transform .15s,box-shadow .15s,opacity .15s,background .15s,co
           <div id="sheetLbl"></div>
           <button id="sheetLblEditBtn" onclick="toggleLabelEdit()" style="font-size:11px;color:var(--th);background:none;border:1px dashed var(--border);cursor:pointer;padding:3px 8px;border-radius:6px;font-family:var(--sans)">Add label</button>
         </div>
-        <div id="sheetLblRow" style="display:none;margin-top:6px;gap:6px;flex-wrap:wrap">
-          <select id="sheetLblSel" style="flex:1;padding:7px 10px;font-size:13px;border:1.5px solid var(--border);border-radius:10px;background:var(--bg);color:var(--tp);font-family:var(--sans);outline:none"></select>
-          <button onclick="saveLabelEdit()" style="padding:7px 12px;font-size:13px;font-weight:600;background:var(--amber);color:#fff;border:none;border-radius:10px;cursor:pointer">Save</button>
-          <button onclick="toggleLabelEdit()" style="padding:7px 10px;font-size:13px;background:transparent;color:var(--th);border:1.5px solid var(--border);border-radius:10px;cursor:pointer">Cancel</button>
+        <div id="sheetLblRow" style="display:none;margin-top:8px">
+          <div id="sheetLblPicker" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center"></div>
         </div>
       </div>
       <button class="sheet-close" onclick="closeSheet()">×</button>
@@ -1207,7 +1179,7 @@ function openSettings(){
   el.classList.add('on');
   document.getElementById('pinEnabled').checked=!!userSettings.pinHash;
   document.getElementById('pinChangeRow').classList.toggle('show',!!userSettings.pinHash);
-  document.getElementById('lockNowBtn').style.display=userSettings.pinHash?'':'none';
+  document.getElementById('lockNowRow').style.display=userSettings.pinHash?'':'none';
   document.getElementById('darkToggle').checked=localStorage.getItem('dsc_theme')==='dark';
   document.getElementById('sortToggle').checked=getSortSetting();
   const qd=parseInt(localStorage.getItem('dsc_quote_dur'),10)||8;
@@ -1225,7 +1197,7 @@ function closeSettingsOnBg(e){if(e.target===document.getElementById('settingsOve
 function togglePinSetting(){
   const on=document.getElementById('pinEnabled').checked;
   document.getElementById('pinChangeRow').classList.toggle('show',on);
-  if(!on){userSettings.pinHash=null;saveSettingsDoc();document.getElementById('lockNowBtn').style.display='none';}
+  if(!on){userSettings.pinHash=null;saveSettingsDoc();document.getElementById('lockNowRow').style.display='none';}
 }
 function savePinChange(){
   const p=document.getElementById('pinNew').value.trim();
@@ -1235,7 +1207,7 @@ function savePinChange(){
   if(p!==p2){err.textContent='PINs do not match';return}
   userSettings.pinHash=hash(p);
   saveSettingsDoc();
-  document.getElementById('lockNowBtn').style.display='';
+  document.getElementById('lockNowRow').style.display='';
   err.textContent='';
   document.getElementById('pinNew').value='';
   document.getElementById('pinNew2').value='';
@@ -1262,48 +1234,6 @@ async function doInstall(){
     else if(/Android/.test(ua)) msg='On Android Chrome:\nTap ⋮ (menu) → "Add to Home Screen" or "Install app"';
     else msg='On desktop Chrome/Edge:\nLook for the ⊕ icon in the address bar and click it.\n\nIf you already installed it, you\'re all set!';
     alert(msg);
-  }
-}
-
-// ── GIST IMPORT (one-time migration for users of the old Gist-based version) ──
-function openGistImport(){
-  document.getElementById('importGistId').value='';
-  document.getElementById('importGistToken').value='';
-  document.getElementById('gistImportErr').textContent='';
-  document.getElementById('gistImportOverlay').classList.add('on');
-}
-function closeGistImport(){ document.getElementById('gistImportOverlay').classList.remove('on'); }
-async function doGistImport(){
-  const g=document.getElementById('importGistId').value.trim();
-  const t=document.getElementById('importGistToken').value.trim();
-  const err=document.getElementById('gistImportErr');
-  if(!g||!t){err.textContent='Both fields are required';return}
-  err.style.color='var(--ts)';err.textContent='Fetching your old data…';
-  try{
-    const r=await fetch(`https://api.github.com/gists/${g}`,{headers:{Authorization:`token ${t}`,Accept:'application/vnd.github.v3+json'}});
-    if(!r.ok){err.style.color='var(--rose)';err.textContent='Gist not found or invalid token';return}
-    const j=await r.json();
-    const raw=(j.files['days-since.json']||{}).content||'{}';
-    const remote=JSON.parse(raw);
-    if(!remote.items||!remote.items.length){err.style.color='var(--rose)';err.textContent='That Gist has no items to import';return}
-
-    // Merge: add any imported items whose name isn't already present
-    const existingNames=new Set(data.items.map(it=>it.name.toLowerCase()));
-    const newItems=remote.items.filter(it=>!existingNames.has((it.name||'').toLowerCase())).map(norm);
-    data.items=[...data.items,...newItems];
-    if(remote.labels){
-      const existingLabelNames=new Set(data.labels.map(l=>(l.name||l).toLowerCase()));
-      const newLabels=normLabels(remote.labels).filter(l=>!existingLabelNames.has(l.name.toLowerCase()));
-      data.labels=[...data.labels,...newLabels];
-    }
-    saveUserData();
-    renderAll();
-    closeGistImport();
-    closeSettings();
-  }catch(e){
-    err.style.color='var(--rose)';
-    err.textContent='Could not import — check the Gist ID and token';
-    console.error(e);
   }
 }
 
@@ -1476,6 +1406,7 @@ let sheetIdx=null;
 let sheetOpenedAt=0;
 function openSheet(i){
   sheetIdx=i;
+  document.getElementById('sheetLblRow').style.display='none';
   renderSheet();
   sheetOpenedAt=Date.now();
   document.getElementById('sheetOverlay').classList.add('on');
@@ -1565,24 +1496,33 @@ function saveRename(){
 }
 function toggleLabelEdit(){
   const row=document.getElementById('sheetLblRow');
-  const showing=row.style.display==='flex';
-  row.style.display=showing?'none':'flex';
-  if(!showing){
-    // populate select with all labels + no label option
-    const sel=document.getElementById('sheetLblSel');
-    sel.innerHTML='<option value="">No label</option>';
-    (data.labels||[]).forEach(l=>{
-      const n=l.name||l;
-      sel.innerHTML+=`<option value="${n}">${n}</option>`;
-    });
-    sel.value=data.items[sheetIdx].label||'';
-  }
+  const showing=row.style.display==='block';
+  row.style.display=showing?'none':'block';
+  if(!showing) renderSheetLabelPicker();
 }
-function saveLabelEdit(){
+function renderSheetLabelPicker(){
   if(sheetIdx===null)return;
-  data.items[sheetIdx].label=document.getElementById('sheetLblSel').value;
+  const wrap=document.getElementById('sheetLblPicker');
+  const current=data.items[sheetIdx].label||'';
+  let h=`<button class="add-lbl-chip${current===''?' picked':''}" onclick="pickSheetLabel('')">No label</button>`;
+  (data.labels||[]).forEach(l=>{
+    const n=l.name||l, c=l.color||null;
+    const picked=current===n;
+    const st=(!picked&&c)?`style="background:${colBg(c)};border-color:${colBorder(c)};color:${darken(c)}"`:'';
+    h+=`<button class="add-lbl-chip${picked?' picked':''}" ${st} onclick="pickSheetLabel(this.dataset.n)" data-n="${n.replace(/"/g,'&quot;')}">${n}</button>`;
+  });
+  h+=`<button class="add-lbl-chip sheet-lbl-plus" onclick="goManageLabelsFromSheet()" title="Manage labels">+</button>`;
+  wrap.innerHTML=h;
+}
+function pickSheetLabel(name){
+  if(sheetIdx===null)return;
+  data.items[sheetIdx].label=name;
   document.getElementById('sheetLblRow').style.display='none';
   renderAll();renderSheet();pushGist();
+}
+function goManageLabelsFromSheet(){
+  document.getElementById('sheetLblRow').style.display='none';
+  openLblModal();
 }
 function autoResizeNotes(el){
   el.style.height='0px'; // reset fully so scrollHeight reflects only actual content
@@ -1709,7 +1649,7 @@ function addItem(){} // kept for safety, replaced by submitAdd
 
 // ── LABELS ──
 function openLblModal(){renderLblList();document.getElementById('lblModal').classList.add('on')}
-function closeLblModal(){document.getElementById('lblModal').classList.remove('on');renderAll();pushGist()}
+function closeLblModal(){document.getElementById('lblModal').classList.remove('on');renderAll();if(sheetIdx!==null)renderSheet();pushGist()}
 function renderLblList(){
   document.getElementById('lblList').innerHTML=(data.labels||[]).map((l,i)=>{
     const n=l.name||l,c=l.color||PALETTE[i%PALETTE.length];
@@ -1772,7 +1712,7 @@ function checkMilestones(){
   (data.items||[]).forEach(item=>{
     const d=daysSince(item.lastDate),ms=milestone(d,item);if(!ms)return;
     const k=item.name+':'+d;
-    if(!nf[k]){showAppNotification('Days Since',{body:`It's been ${ms} since "${item.name}"!`,icon:'icon-192.png',badge:'icon-192.png'});nf[k]=true;ch=true;}
+    if(!nf[k]){showAppNotification('Days Since',{body:`It's been ${ms} since "${item.name}"!`,icon:'icon-192.png',badge:'badge-192.png'});nf[k]=true;ch=true;}
   });
   if(ch)lsSet(NK,nf);
 }
@@ -1795,7 +1735,7 @@ function maybeShowDailyNudge(){
   showAppNotification('Days Since',{
     body:'Log something you did today — even the little things count (:',
     icon:'icon-192.png',
-    badge:'icon-192.png'
+    badge:'badge-192.png'
   });
 }
 
@@ -2132,7 +2072,7 @@ async function importData(event){
 function applyTheme(dark){
   document.documentElement.setAttribute('data-theme',dark?'dark':'light');
   const meta=document.getElementById('themeColorMeta');
-  if(meta) meta.setAttribute('content',dark?'#141210':'#FBF7F0');
+  if(meta) meta.setAttribute('content',dark?'#161210':'#FBF7F0');
   // Update apple status bar style
   const apple=document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
   if(apple) apple.setAttribute('content',dark?'black':'default');
