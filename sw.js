@@ -1,7 +1,7 @@
 // Minimal service worker — required by Chrome/Android for the automatic
 // "Install app" prompt to fire. Also gives basic offline capability by
 // caching the app shell.
-const CACHE_NAME = 'days-since-v2';
+const CACHE_NAME = 'days-since-v3';
 const APP_SHELL = [
   './',
   './index.html',
@@ -40,5 +40,21 @@ self.addEventListener('fetch', event => {
         return res;
       })
       .catch(() => caches.match(event.request))
+  );
+});
+
+// Tapping a notification does nothing by default — this is what actually
+// opens (or focuses, if already open) the app when you tap on one.
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+      for (const client of clientList) {
+        // Already open in a tab — just bring it to the front
+        if ('focus' in client) return client.focus();
+      }
+      // Not open anywhere — open a new window/tab
+      if (self.clients.openWindow) return self.clients.openWindow('./index.html');
+    })
   );
 });
